@@ -8,7 +8,7 @@ setup_disks_and_mounts() {
 
     # 1. Detectar discos disponibles de forma limpia (excluyendo loops, rom, etc.)
     local disks
-    disks=$(lsblk -ln -o NAME,SIZE,TYPE | grep "disk" | awk '{print "/dev/" $1 " (" $2 ")}"')
+    disks=$(lsblk -dno NAME,SIZE,TYPE | grep "disk" | awk '{print "/dev/" $1 " (" $2 ")"}')
 
     if [ -z "$disks" ]; then
         msg_error "No se han encontrado discos de almacenamiento válidos."
