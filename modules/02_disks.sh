@@ -6,7 +6,7 @@ setup_disks_and_mounts() {
     show_header
     msg_info "Configuración de Discos y Particionado"
 
-    # 1. Detectar discos disponibles en un array
+    # 1. Detectar discos disponibles de forma limpia
     local disks=()
     while read -r line; do
         [[ -n "$line" ]] && disks+=("$line")
@@ -40,11 +40,11 @@ setup_disks_and_mounts() {
     show_header
     msg_info "Ahora vamos a asignar las particiones creadas."
 
-    # Cargar particiones en un array de forma segura
+    # Cargar particiones limpiando cualquier carácter de árbol de lsblk (└, ├, ─, etc.)
     local partitions=()
     while read -r line; do
         [[ -n "$line" ]] && partitions+=("$line")
-    done < <(lsblk -no NAME,SIZE,TYPE | grep part | awk '{print "/dev/" $1 " (" $2 ")"}')
+    done < <(lsblk -no NAME,SIZE,TYPE | grep part | sed 's/[│├└─]//g' | awk 'NF>=2 {print "/dev/" $1 " (" $2 ")"}')
 
     if [ ${#partitions[@]} -eq 0 ]; then
         msg_error "No se detectaron particiones. ¿Olvidaste guardarlas en cfdisk?"
@@ -57,7 +57,6 @@ setup_disks_and_mounts() {
     root_part_raw=$(gum choose "${partitions[@]}")
     local root_part
     root_part=$(echo "$root_part_raw" | awk '{print $1}')
-
 
     # Comprobación de modo UEFI / BIOS
     local is_uefi=false
