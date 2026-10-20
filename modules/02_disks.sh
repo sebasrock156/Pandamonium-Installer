@@ -6,7 +6,7 @@ setup_disks_and_mounts() {
     show_header
     msg_info "Configuración de Discos y Particionado"
 
-    # 1. Detectar discos disponibles de forma limpia
+    # 1. Detectar discos disponibles
     local disks=()
     while read -r line; do
         [[ -n "$line" ]] && disks+=("$line")
@@ -51,14 +51,7 @@ setup_disks_and_mounts() {
         exit 1
     fi
 
-    # Seleccionar partición Raíz (/)
-    msg_info "Selecciona la partición para la raíz (/):"
-    local root_part_raw
-    root_part_raw=$(gum choose "${partitions[@]}")
-    local root_part
-    root_part=$(echo "$root_part_raw" | awk '{print $1}')
-
-    # Comprobación de modo UEFI / BIOS
+    # Comprobación de modo UEFI/BIOS
     local is_uefi=false
     if [ -d /sys/firmware/efi/efivars ]; then
         is_uefi=true
@@ -81,6 +74,13 @@ setup_disks_and_mounts() {
             return
         fi
     fi
+
+    # Seleccionar partición Raíz (/)
+    msg_info "Selecciona la partición para la raíz (/):"
+    local root_part_raw
+    root_part_raw=$(gum choose "${partitions[@]}")
+    local root_part
+    root_part=$(echo "$root_part_raw" | awk '{print $1}')
 
     # 3. Confirmar formateo
     clear
