@@ -40,9 +40,9 @@ setup_disks_and_mounts() {
     show_header
     msg_info "Ahora vamos a asignar las particiones creadas."
 
-    # Listar particiones disponibles del sistema
+    # 2. Listar particiones limpias
     local partitions
-    partitions=$(lsblk -ln -o NAME,SIZE,TYPE | grep "part" | awk '{print "/dev/" $1 " (" $2 ")}"')
+    partitions=$(lsblk -no NAME,SIZE,TYPE | grep "part" | awk '{print "/dev/" $1 " (" $2 ")"}')
 
     if [ -z "$partitions" ]; then
         msg_error "No se detectaron particiones. ¿Olvidaste guardarlas en cfdisk?"
