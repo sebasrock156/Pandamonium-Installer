@@ -19,32 +19,31 @@ run_bootstrap() {
     # Mapeo del nombre del paquete del kernel
     local kernel_pkg="linux"
     case "$kernel_choice" in
-        "linux-lts (Long Term Support)")
-            kernel_pkg="linux-lts"
+        "linux-lts (Long Term Support)") 
+            kernel_pkg="linux-lts" 
             ;;
-        "linux-zen (Optimizado para Desktop/Gaming)")
-            kernel_pkg="linux-zen"
+        "linux-zen (Optimizado para Desktop/Gaming)") 
+            kernel_pkg="linux-zen" 
             ;;
-        "linux-cachyos (Alto rendimiento x86-64-v3/v4)")
-            # Nota: Para cachyos se requeriría su repo, por defecto lo mapeamos o dejamos preparado
-            kernel_pkg="linux-cachyos"
+        "linux-cachyos (Alto rendimiento x86-64-v3/v4)") 
+            kernel_pkg="linux-cachyos" 
             ;;
     esac
 
-    # Paquetes esenciales hardcodeados por defecto
+    # Paquetes esenciales por defecto
     local essential_pkgs="base base-devel nano dialog wpa_supplicant dhcpcd linux-firmware $kernel_pkg"
 
     # 3. Ejecución según el Init elegido
     if [[ "$init_choice" == *"SystemD"* ]]; then
-        msg_info "Ejecutando pacstrap oficial con SystemD..."
-
-        # Usamos nuestro spinner favorito para una tarea larga
-        run_spinner "Instalando paquetes base y kernel..." pacstrap /mnt $essential_pkgs systemd systemd-sysvcompat
-
+        msg_info "Iniciando descarga e instalación de paquetes base (SystemD)..."
+        echo ""
+        
+        # Quitamos el spinner para que el usuario vea la barra de progreso nativa de pacstrap
+        pacstrap /mnt $essential_pkgs systemd systemd-sysvcompat
+        
     else
         msg_info "Configurando entorno temporal para Artix (OpenRC)..."
-
-        # Inyectamos un pacman.conf temporal apuntando a los mirrors de Artix
+        
         cat << 'EOF' > /tmp/pacman-artix.conf
 [options]
 HoldPkg     = pacman glibc
@@ -62,8 +61,9 @@ Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 EOF
 
         local artix_pkgs="base openrc openrc-system eudev $kernel_pkg linux-firmware nano dialog wpa_supplicant dhcpcd"
-
-        run_spinner "Instalando sistema base con Artix (OpenRC)..." pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --noconfirm $artix_pkgs
+        
+        echo ""
+        pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --noconfirm $artix_pkgs
     fi
 
     # 4. Generación del FSTAB
