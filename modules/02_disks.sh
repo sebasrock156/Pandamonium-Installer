@@ -6,20 +6,20 @@ setup_disks_and_mounts() {
     show_header
     msg_info "Configuración de Discos y Particionado"
 
-    # 1. Detectar discos disponibles de forma limpia (excluyendo loops, rom, etc.)
-    local disks
-    disks=$(lsblk -dno NAME,SIZE,TYPE | grep "disk" | awk '{print "/dev/" $1 " (" $2 ")"}')
+    # 1. Detectar discos disponibles en un array
+    local disks=()
+    while read -r line; do
+        [[ -n "$line" ]] && disks+=("$line")
+    done < <(lsblk -dno NAME,SIZE,TYPE | grep disk | awk '{print "/dev/" $1 " (" $2 ")"}')
 
-    if [ -z "$disks" ]; then
+    if [ ${#disks[@]} -eq 0 ]; then
         msg_error "No se han encontrado discos de almacenamiento válidos."
         exit 1
     fi
 
     msg_info "Selecciona el disco donde deseas instalar Arch Linux:"
     local selected_disk_raw
-    selected_disk_raw=$(gum choose $disks)
-
-    # Extraer solo la ruta limpia (ej. /dev/sda o /dev/nvme0n1)
+    selected_disk_raw=$(gum choose "${disks[@]}")
     local target_disk
     target_disk=$(echo "$selected_disk_raw" | awk '{print $1}')
 
@@ -40,11 +40,13 @@ setup_disks_and_mounts() {
     show_header
     msg_info "Ahora vamos a asignar las particiones creadas."
 
-    # 2. Listar particiones limpias
-    local partitions
-    partitions=$(lsblk -no NAME,SIZE,TYPE | grep "part" | awk '{print "/dev/" $1 " (" $2 ")"}')
+    # Cargar particiones en un array de forma segura
+    local partitions=()
+    while read -r line; do
+        [[ -n "$line" ]] && partitions+=("$line")
+    done < <(lsblk -no NAME,SIZE,TYPE | grep part | awk '{print "/dev/" $1 " (" $2 ")"}')
 
-    if [ -z "$partitions" ]; then
+    if [ ${#partitions[@]} -eq 0 ]; then
         msg_error "No se detectaron particiones. ¿Olvidaste guardarlas en cfdisk?"
         exit 1
     fi
@@ -52,9 +54,10 @@ setup_disks_and_mounts() {
     # Seleccionar partición Raíz (/)
     msg_info "Selecciona la partición para la raíz (/):"
     local root_part_raw
-    root_part_raw=$(gum choose $partitions)
+    root_part_raw=$(gum choose "${partitions[@]}")
     local root_part
     root_part=$(echo "$root_part_raw" | awk '{print $1}')
+
 
     # Comprobación de modo UEFI / BIOS
     local is_uefi=false
@@ -69,7 +72,7 @@ setup_disks_and_mounts() {
     if [ "$is_uefi" = true ]; then
         msg_info "Selecciona la partición EFI (ESP):"
         local boot_part_raw
-        boot_part_raw=$(gum choose $partitions)
+        boot_part_raw=$(gum choose "${partitions[@]}")
         boot_part=$(echo "$boot_part_raw" | awk '{print $1}')
 
         if [ "$root_part" = "$boot_part" ]; then
@@ -83,7 +86,7 @@ setup_disks_and_mounts() {
     # 3. Confirmar formateo
     clear
     show_header
-    msg_error "¡ATENCIÓN! Se van a formatear las particiones seleccionadas."
+    msg_info "¡ATENCIÓN! Se van a formatear las particiones seleccionadas."
     echo " - Raíz (/): $root_part (Se formateará a ext4)"
     [ "$is_uefi" = true ] && echo " - EFI (/boot/EFI): $boot_part (Se formateará a FAT32)"
 
