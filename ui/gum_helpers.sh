@@ -17,10 +17,10 @@ show_header() {
         "Pandamonium - ArchLinux Installer" "Script ligero de instalación"
 }
 
-run_spinner_network() {
+run_spinner() {
     local title="$1"
     shift
-    gum spin --spinner globe --title "$title" -- "$@"
+    gum spin --spinner dot --title "$title" -- "$@"
 }
 
 msg_info() {
