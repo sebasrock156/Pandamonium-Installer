@@ -5,7 +5,7 @@ source ui/gum_helpers.sh
 check_and_configure_network() {
     show_header
     msg_info "Comprobando conexión a Internet..."
-    gum spin --spinner globe --title "Conectando con servidores de Arch Linux..." -- sleep 5
+    gum spin --spinner globe --title "Conectando con servidores de Arch Linux..." -- sleep 3
 
     if ping -c 1 archlinux.org >/dev/null 2>&1; then
         msg_success "Conexión a Internet detectada correctamente."
