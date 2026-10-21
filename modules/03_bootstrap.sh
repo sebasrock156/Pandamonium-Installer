@@ -9,7 +9,7 @@ run_bootstrap() {
     # Selección de Init
     msg_info "Selecciona el Sistema de Inicio (Init) deseado:"
     local init_choice
-    init_choice=$(gum choose "Systemd (ArchLinux Repos)" "OpenRC (Artix Repos)")
+    init_choice=$(gum choose "Systemd (ArchLinux Repos)" "OpenRC (Artix Repos, en desarrollo)")
 
     # 2. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
@@ -39,7 +39,7 @@ run_bootstrap() {
         msg_success "Procesador AMD detectado: Se instalará amd-ucode."
     fi
 
-    # Asegurar el llavero de pacman en el Live para evitar errores de ALPM
+    # Asegurar el llavero de pacman en el Live
     msg_info "Inicializando claves de pacman en el entorno de instalación..."
     pacman-key --init >/dev/null 2>&1
     pacman-key --populate archlinux >/dev/null 2>&1
@@ -73,12 +73,18 @@ Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 EOF
 
-        # Sustituimos el problemático eudev por systemd-udev (standalone para Artix) asegurando estabilidad
-        local artix_pkgs="base openrc openrc-system systemd-udev w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
+        # Usamos los paquetes oficial de Artix: udev-openrc y udev autónomo para garantizar soporte gráfico
+        local artix_pkgs="base openrc openrc-system udev udev-openrc w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager networkmanager-openrc wireless_tools wpa_supplicant dialog nano"
         
         msg_info "Iniciando instalación mediante pacstrap (OpenRC)..."
         echo ""
         yes "" | pacstrap -C /tmp/pacman-artix.conf /mnt $artix_pkgs
+
+        # Habilitar el servicio udev en OpenRC para el entorno objetivo
+        if [ -d "/mnt/etc/runlevels/sysinit" ]; then
+            ln -sf /etc/init.d/udev /mnt/etc/runlevels/sysinit/udev 2>/dev/null
+            ln -sf /etc/init.d/udev-trigger /mnt/etc/runlevels/sysinit/udev-trigger 2>/dev/null
+        fi
     fi
 
     # Comprobar si el bootstrap se completó antes de generar el fstab
