@@ -50,6 +50,7 @@ main_menu() {
                 setup_disks_and_mounts
                 run_bootstrap
                 run_chroot_config
+                run_desktop_selection
                 msg_success "¡Instalación completada!"
                 sleep 3
                 ;;
