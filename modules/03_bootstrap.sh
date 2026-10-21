@@ -16,7 +16,10 @@ run_bootstrap() {
     local kernel_choice
     kernel_choice=$(gum choose "linux (Mainline estándar)" "linux-lts (Long Term Support)" "linux-zen (Optimizado para Desktop/Gaming)" "linux-cachyos (Alto rendimiento x86-64-v3/v4)")
 
+    # Mapeo del nombre del paquete del kernel y repositorios especiales
     local kernel_pkg="linux"
+    local extra_repo_setup=""
+
     case "$kernel_choice" in
         "linux-lts (Long Term Support)") 
             kernel_pkg="linux-lts" 
@@ -25,7 +28,17 @@ run_bootstrap() {
             kernel_pkg="linux-zen" 
             ;;
         "linux-cachyos (Alto rendimiento x86-64-v3/v4)") 
-            kernel_pkg="linux-cachyos" 
+            kernel_pkg="linux-cachyos"
+            # CachyOS requiere su propio repositorio y llaves en el sistema host para pacstrap
+            msg_info "Añadiendo repositorio de CachyOS al entorno de instalación..."
+            pacman-key --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com 2>/dev/null || true
+            pacman-key --lsign-key F3B607488DBAF4A4 2>/dev/null || true
+            
+            if ! grep -q "\[cachyos\]" /etc/pacman.conf; then
+                # Insertar el repositorio de CachyOS arriba del todo en pacman.conf
+                sed -i '1i [cachyos]\nServer = https://mirror.cachyos.org/repo/\$arch/\$repo\n' /etc/pacman.conf
+                pacman -Sy
+            fi
             ;;
     esac
 
