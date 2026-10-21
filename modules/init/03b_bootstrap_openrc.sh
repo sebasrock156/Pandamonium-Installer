@@ -59,11 +59,12 @@ EOF
     msg_info "Instalando paquetes base con pacman (Artix Repos) en /mnt..."
     
     mkdir -p /mnt/var/lib/pacman
+    mkdir -p /mnt/var/cache/pacman/pkg
     
     if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --dbpath /mnt/var/lib/pacman --cachedir /mnt/var/cache/pacman/pkg $artix_pkgs; then
         # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
-        genfstab -U /mnt >> /mnt/etc/fstab
+        fstabgen -U /mnt >> /mnt/etc/fstab
         msg_success "¡Bootstrap de OpenRC e inyección de Artix completados con éxito!"
     else
         msg_error "Error al instalar los paquetes de Artix en /mnt."
