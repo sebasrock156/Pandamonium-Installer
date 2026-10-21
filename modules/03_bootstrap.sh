@@ -6,37 +6,37 @@ run_bootstrap() {
     show_header
     msg_info "Configuración de Bootstrap e Inicialización del Sistema"
 
-    # 1. Selección del Sistema de Inicio (Init)
+    # Selección de Init
     msg_info "Selecciona el Sistema de Inicio (Init) deseado:"
     local init_choice
-    init_choice=$(gum choose "SystemD (Arch Linux Oficial)" "OpenRC (Artix Repos)")
+    init_choice=$(gum choose "Systemd (ArchLinux Repos)" "OpenRC (Artix Repos)")
 
-    # 2. Selección de Kernel (Sin CachyOS)
-    msg_info "Selecciona la versión del Kernel:"
+    # 2. Selección de Kernel
+    msg_info "Selecciona la variante del Kernel:"
     local kernel_choice
-    kernel_choice=$(gum choose "linux (Mainline estándar)" "linux-lts (Long Term Support)" "linux-zen (Optimizado para Desktop/Gaming)")
+    kernel_choice=$(gum choose "linux (Mainline)" "linux-lts (Soporte extendido)" "linux-zen (Optimizado para Escritorio/Gaming)")
 
     # Mapeo del nombre del paquete del kernel
     local kernel_pkg="linux"
 
     case "$kernel_choice" in
-        "linux-lts (Long Term Support)") 
+        "linux-lts (Soporte extendido)") 
             kernel_pkg="linux-lts" 
             ;;
-        "linux-zen (Optimizado para Desktop/Gaming)") 
+        "linux-zen (Optimizado para Escritorio/Gaming)") 
             kernel_pkg="linux-zen" 
             ;;
     esac
 
     # --- AUTODETECCIÓN SEGURA DE MICROCÓDIGO ---
-    msg_info "Detectando microcódigo de CPU..."
+    gum spin --spinner dot --title "Detectando el microcódigo/AGESA del procesador" -- sleep 3
     local ucode_pkg=""
     if grep -q "GenuineIntel" /proc/cpuinfo; then
         ucode_pkg="intel-ucode"
-        msg_success "-> CPU Intel detectada: Se instalará intel-ucode."
+        msg_success "-> Procesador de Intel detectado: Se instalará intel-ucode."
     elif grep -q "AuthenticAMD" /proc/cpuinfo; then
         ucode_pkg="amd-ucode"
-        msg_success "-> CPU AMD detectada: Se instalará amd-ucode."
+        msg_success "-> Procesador de AMD detectado: Se instalará amd-ucode."
     fi
 
     # Paquetes esenciales
@@ -44,11 +44,11 @@ run_bootstrap() {
 
     # 3. Ejecución según el Init elegido
     if [[ "$init_choice" == *"SystemD"* ]]; then
-        msg_info "Iniciando instalación mediante pacstrap (SystemD)..."
+        msg_info "Iniciando instalación mediante pacstrap (Systemd)..."
         echo ""
         pacstrap /mnt $essential_pkgs systemd systemd-sysvcompat
     else
-        msg_info "Configurando entorno temporal para Artix (OpenRC)..."
+        gum spin --spinner dot --title "Configurando entorno para OpenRC" -- sleep 3
         
         cat << 'EOF' > /tmp/pacman-artix.conf
 [options]
