@@ -18,7 +18,6 @@ run_bootstrap() {
 
     # Mapeo del nombre del paquete del kernel y repositorios especiales
     local kernel_pkg="linux"
-    local extra_repo_setup=""
 
     case "$kernel_choice" in
         "linux-lts (Long Term Support)") 
@@ -29,16 +28,24 @@ run_bootstrap() {
             ;;
         "linux-cachyos (Alto rendimiento x86-64-v3/v4)") 
             kernel_pkg="linux-cachyos"
-            # CachyOS requiere su propio repositorio y llaves en el sistema host para pacstrap
-            msg_info "Añadiendo repositorio de CachyOS al entorno de instalación..."
-            pacman-key --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com 2>/dev/null || true
-            pacman-key --lsign-key F3B607488DBAF4A4 2>/dev/null || true
+            
+            msg_info "Configurando llavero y repositorio de CachyOS..."
+            
+            # Inicializar y poblar el keyring si fuera necesario para evitar rechazos de firmas
+            pacman-key --init
+            pacman-key --populate archlinux
+
+            # Descargar y firmar localmente la clave oficial de CachyOS
+            pacman-key --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com
+            pacman-key --lsign-key F3B607488DBAF4A4
             
             if ! grep -q "\[cachyos\]" /etc/pacman.conf; then
                 # Insertar el repositorio de CachyOS arriba del todo en pacman.conf
                 sed -i '1i [cachyos]\nServer = https://mirror.cachyos.org/repo/\$arch/\$repo\n' /etc/pacman.conf
-                pacman -Sy
             fi
+
+            # Sincronizar bases de datos con el nuevo repositorio y claves listas
+            pacman -Sy
             ;;
     esac
 
