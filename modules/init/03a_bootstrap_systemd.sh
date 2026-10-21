@@ -42,6 +42,7 @@ run_bootstrap_systemd() {
         # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
         genfstab -U /mnt >> /mnt/etc/fstab
+        echo "systemd" > /tmp/pandamonium_init
         msg_success "¡Bootstrap (Systemd) y fstab generados correctamente!"
     else
         msg_error "Error al ejecutar pacstrap."
