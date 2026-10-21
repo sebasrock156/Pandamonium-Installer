@@ -9,12 +9,12 @@ run_bootstrap_openrc() {
     # 1. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
     local kernel_choice
-    kernel_choice=$(gum choose "linux (Mainline)" "linux-lts (Soporte extendido)" "linux-zen (Optimizado para Escritorio/Gaming)")
+    kernel_choice=$(gum choose "linux (Mainline)" "linux-rt (Tiempo real)" "linux-zen (Optimizado para Escritorio/Gaming)")
 
     local kernel_pkg="linux"
     case "$kernel_choice" in
-        "linux-lts (Soporte extendido)")
-            kernel_pkg="linux-lts"
+        "linux-rt (Tiempo Real)")
+            kernel_pkg="linux-rt"
             ;;
         "linux-zen (Optimizado para Escritorio/Gaming)")
             kernel_pkg="linux-zen"
