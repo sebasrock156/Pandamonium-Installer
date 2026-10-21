@@ -39,8 +39,8 @@ run_bootstrap() {
         msg_success "-> CPU AMD detectada: Se instalará amd-ucode."
     fi
 
-    # Paquetes esenciales limpios y sin sobrecarga
-    local essential_pkgs="base base-devel nano $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog"
+    # Paquetes esenciales
+    local essential_pkgs="base base-devel nano htop fastfetch w3m $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog"
 
     # 3. Ejecución según el Init elegido
     if [[ "$init_choice" == *"SystemD"* ]]; then
@@ -66,7 +66,7 @@ Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 EOF
 
-        local artix_pkgs="base openrc openrc-system eudev $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
+        local artix_pkgs="base openrc openrc-system eudev w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
         
         echo ""
         pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --noconfirm $artix_pkgs
