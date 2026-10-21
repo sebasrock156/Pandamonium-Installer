@@ -11,12 +11,12 @@ run_bootstrap() {
     local init_choice
     init_choice=$(gum choose "SystemD (Arch Linux Oficial)" "OpenRC (Artix Repos)")
 
-    # 2. Selección de Kernel
+    # 2. Selección de Kernel (Sin CachyOS)
     msg_info "Selecciona la versión del Kernel:"
     local kernel_choice
-    kernel_choice=$(gum choose "linux (Mainline estándar)" "linux-lts (Long Term Support)" "linux-zen (Optimizado para Desktop/Gaming)" "linux-cachyos (Alto rendimiento x86-64-v3/v4)")
+    kernel_choice=$(gum choose "linux (Mainline estándar)" "linux-lts (Long Term Support)" "linux-zen (Optimizado para Desktop/Gaming)")
 
-    # Mapeo del nombre del paquete del kernel y repositorios especiales
+    # Mapeo del nombre del paquete del kernel
     local kernel_pkg="linux"
 
     case "$kernel_choice" in
@@ -25,37 +25,6 @@ run_bootstrap() {
             ;;
         "linux-zen (Optimizado para Desktop/Gaming)") 
             kernel_pkg="linux-zen" 
-            ;;
-        "linux-cachyos (Alto rendimiento x86-64-v3/v4)") 
-            kernel_pkg="linux-cachyos"
-            
-            msg_info "Configurando llavero y repositorio de CachyOS..."
-    
-    # 1. Matar procesos huérfanos de gpg-agent y limpiar de forma limpia
-    pkill -9 gpg-agent 2>/dev/null || true
-    pkill -9 dirmngr 2>/dev/null || true
-    rm -rf /etc/pacman.d/gnupg
-    
-    # 2. Inicializar el llavero correctamente
-    pacman-key --init
-    pacman-key --populate archlinux
-    pacman -Sy --noconfirm archlinux-keyring
-
-    # Configurar repositorio de CachyOS de forma limpia y sin bloqueos de firma
-    msg_info "Añadiendo repositorio de CachyOS a pacman.conf..."
-    
-    if ! grep -q "\[cachyos\]" /etc/pacman.conf; then
-        # Añadir al final de /etc/pacman.conf con SigLevel relajado para evitar el error de unknown trust
-        cat << 'EOF' >> /etc/pacman.conf
-
-[cachyos]
-SigLevel = Optional TrustAll
-Server = https://mirror.cachyos.org/repo/$arch/$repo
-EOF
-    fi
-
-    # Sincronizar bases de datos limpiamente
-    pacman -Sy
             ;;
     esac
 
