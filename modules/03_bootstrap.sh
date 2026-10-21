@@ -74,16 +74,16 @@ Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 EOF
 
         # Usamos los paquetes oficial de Artix: udev-openrc y udev autónomo para garantizar soporte gráfico
-        local artix_pkgs="base openrc openrc-system eudev libeudev w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager networkmanager-openrc wireless_tools wpa_supplicant dialog nano"
+        local artix_pkgs="base openrc openrc-system udev udev w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager networkmanager-openrc wireless_tools wpa_supplicant dialog nano"
         
         msg_info "Iniciando instalación mediante pacstrap (OpenRC)..."
         echo ""
-        yes "" | pacstrap -C /tmp/pacman-artix.conf /mnt $artix_pkgs
+        pacstrap -C /tmp/pacman-artix.conf /mnt $artix_pkgs
 
         # Habilitar el servicio udev en OpenRC para el entorno objetivo
         if [ -d "/mnt/etc/runlevels/sysinit" ]; then
-            ln -sf /etc/init.d/eudev /mnt/etc/runlevels/sysinit/udev 2>/dev/null
-            ln -sf /etc/init.d/eudev-trigger /mnt/etc/runlevels/sysinit/udev-trigger 2>/dev/null
+            ln -sf /etc/init.d/udev /mnt/etc/runlevels/sysinit/udev 2>/dev/null
+            ln -sf /etc/init.d/udev-trigger /mnt/etc/runlevels/sysinit/udev-trigger 2>/dev/null
         fi
     fi
 
