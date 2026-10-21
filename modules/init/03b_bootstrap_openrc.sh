@@ -60,7 +60,7 @@ EOF
     
     mkdir -p /mnt/var/lib/pacman
     
-    if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --cachedir /var/cache/pacman/pkg $artix_pkgs; then
+    if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --dbpath /mnt/var/lib/pacman --cachedir /mnt/var/cache/pacman/pkg $artix_pkgs; then
         # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
         genfstab -U /mnt >> /mnt/etc/fstab
