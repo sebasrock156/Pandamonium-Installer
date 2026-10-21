@@ -49,6 +49,23 @@ run_chroot_config() {
     local hostname
     hostname=$(gum input --placeholder "Introduce el hostname (ej. mi-pc):" --value "arch-pc")
 
+    # 5. Contraseña de Root obligatoria y segura
+    show_header
+    msg_info "Establece la contraseña de administrador (root):"
+    local root_pass=""
+    while true; do
+        root_pass=$(gum input --password --prompt "Contraseña de root: ")
+        local root_pass_confirm
+        root_pass_confirm=$(gum input --password --prompt "Confirma la contraseña: ")
+
+        if [ "$root_pass" = "$root_pass_confirm" ] && [ -n "$root_pass" ]; then
+            msg_success "¡Contraseña de root validada!"
+            break
+        else
+            msg_error "Las contraseñas no coinciden o están vacías. Inténtalo de nuevo."
+        fi
+    done
+
     # --- Generación del script interno con las variables capturadas ---
 
     cat << EOF > /mnt/tmp/configure_system.sh
@@ -73,18 +90,18 @@ cat << HOSTS > /etc/hosts
 127.0.1.1   $hostname.localdomain   $hostname
 HOSTS
 
-# 4. Contraseña de Root
-echo "Configura la contraseña de Root:"
-passwd
-
 EOF
 
-    # Damos permisos y ejecutamos el script dentro del chroot de forma interactiva
+    # Damos permisos y ejecutamos el script base dentro del chroot
     chmod +x /mnt/tmp/configure_system.sh
     $chroot_cmd /mnt /tmp/configure_system.sh
     rm -f /mnt/tmp/configure_system.sh
 
-    # Creación de usuario personalizado de forma interactiva fuera/dentro
+    # Asignar la contraseña de root de forma segura mediante chpasswd
+    echo "root:$root_pass" | $chroot_cmd /mnt chpasswd
+    msg_success "Contraseña de root configurada exitosamente."
+
+    # Creación de usuario personalizado de forma interactiva
     show_header
     msg_info "Creación de usuario del sistema"
 
@@ -105,7 +122,6 @@ EOF
     show_header
     msg_info "Configuración del Gestor de Arranque (Bootloader)"
 
-    # Opciones de bootloader según el tipo de arranque
     local bootloader_choice
     if [ -d /sys/firmware/efi/efivars ]; then
         bootloader_choice=$(gum choose "GRUB (Universal y flexible)" "systemd-boot (Nativo UEFI, ligero)")
@@ -135,14 +151,12 @@ EOF
             msg_info "Instalando systemd-boot..."
             $chroot_cmd /mnt bootctl install
 
-            # Crear la entrada de configuración básica para systemd-boot
             cat << 'EOF' > /mnt/boot/loader/loader.conf
 default arch.*
 timeout 4
 editor 0
 EOF
 
-            # Obtener el UUID raíz de forma segura con findmnt desde el host montado
             local root_uuid
             root_uuid=$(findmnt -no UUID /mnt)
 
