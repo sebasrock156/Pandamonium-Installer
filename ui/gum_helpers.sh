@@ -61,3 +61,8 @@ show_interactive_5panel_dashboard() {
     # Pasamos las tarjetas enteras como opciones de gum choose
     gum choose "$p1" "$p2" "$p3" "$p4" "$p5" "$p_all" "$p_exit"
 }
+
+confirm_action() {
+    local prompt="$1"
+    gum confirm "$prompt"
+}
