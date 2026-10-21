@@ -4,7 +4,7 @@ source ui/gum_helpers.sh
 
 run_bootstrap_openrc() {
     show_header
-    msg_info "Modo Bootstrap: OpenRC (Artix Linux Repos Oficiales)"
+    msg_info "Modo Bootstrap: OpenRC (Artix Linux vía Inyección)"
 
     # 1. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
@@ -32,19 +32,39 @@ run_bootstrap_openrc() {
         msg_success "-> Procesador AMD detectado: Se instalará amd-ucode."
     fi
 
-    # Paquetes esenciales para Artix con OpenRC (evitamos nombrar demonios deprecados o fantasmas)
+    # 3. Inyección del pacman.conf de Artix
+    gum spin --spinner dot --title "Inyectando repositorios de Artix Linux" -- sleep 2
+
+    cat << 'EOF' > /tmp/pacman-artix.conf
+[options]
+HoldPkg     = pacman glibc
+Architecture = auto
+CheckSpace
+SigLevel    = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+[system]
+Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
+[world]
+Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
+[galaxy]
+Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
+EOF
+
+    # Paquetes base esenciales para Artix con OpenRC
     local artix_pkgs="base base-devel openrc openrc-system w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
 
-    # 3. Instalación vía basestrap de Artix
+    # 4. Instalación directa sobre /mnt con el pacman.conf inyectado
     echo ""
-    msg_info "Ejecutando basestrap de Artix en /mnt..."
-    if basestrap /mnt $artix_pkgs; then
-        # 4. Generación del FSTAB con fstabgen
+    msg_info "Instalando paquetes base con pacman (Artix Repos) en /mnt..."
+    
+    if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --noconfirm $artix_pkgs; then
+        # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
-        fstabgen -U /mnt >> /mnt/etc/fstab
-        msg_success "¡Bootstrap (OpenRC) y fstab generados correctamente con herramientas nativas!"
+        genfstab -U /mnt >> /mnt/etc/fstab
+        msg_success "¡Bootstrap de OpenRC e inyección de Artix completados con éxito!"
     else
-        msg_error "Error al ejecutar basestrap con los repositorios de Artix."
+        msg_error "Error al instalar los paquetes de Artix en /mnt."
     fi
 
     sleep 2
