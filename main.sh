@@ -12,7 +12,7 @@ source modules/01_network.sh
 source modules/02_disks.sh
 source modules/03_bootstrap.sh
 source modules/04_chroot.sh
-source modules/05_desktop.sh
+source modules/05_gui.sh
 
 main_menu() {
     while true; do
@@ -43,14 +43,14 @@ main_menu() {
                 run_chroot_config
                 ;;
             "5. Elección de GUI (DE/WM)")
-                run_desktop_selection
+                gui_sel
                 ;;
             "6. Ejecutar Instalación Completa (Secuencial)")
                 check_and_configure_network
                 setup_disks_and_mounts
                 run_bootstrap
                 run_chroot_config
-                run_desktop_selection
+                gui_sel
                 msg_success "¡Instalación completada!"
                 sleep 3
                 ;;
