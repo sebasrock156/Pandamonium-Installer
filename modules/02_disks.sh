@@ -7,6 +7,7 @@ setup_disks_and_mounts() {
     msg_info "Configuración de Discos y Particionado"
 
     # 1. Detectar discos disponibles
+    gum spin --spinner dot --title "Buscando discos/unidades de almacenamiento..." -- sleep 3
     local disks=()
     while read -r line; do
         [[ -n "$line" ]] && disks+=("$line")
