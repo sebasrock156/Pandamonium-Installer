@@ -62,7 +62,7 @@ run_bootstrap() {
 HoldPkg     = pacman glibc
 Architecture = auto
 CheckSpace
-SigLevel    = Required DatabaseOptional
+SigLevel    = Optional TrustAll
 LocalFileSigLevel = Optional
 
 [system]
@@ -77,8 +77,8 @@ EOF
         
         msg_info "Iniciando instalación mediante pacstrap (OpenRC)..."
         echo ""
-        # Usamos pacstrap con el parámetro -C para leer los repositorios de Artix correctamente
-        pacstrap -n -C /tmp/pacman-artix.conf /mnt $artix_pkgs
+        # Usamos yes "" para responder automáticamente al selector de grupos de openrc-system
+        yes "" | pacstrap -C /tmp/pacman-artix.conf /mnt $artix_pkgs
     fi
 
     # Comprobar si el bootstrap se completó antes de generar el fstab
