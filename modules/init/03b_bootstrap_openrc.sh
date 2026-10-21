@@ -32,7 +32,7 @@ run_bootstrap_openrc() {
         msg_success "-> Procesador AMD detectado: Se instalará amd-ucode."
     fi
 
-    # 3. Inyección del pacman.conf de Artix
+    # 3. Inyección del pacman.conf de Artix (SigLevel permisivo para la inyección inicial)
     gum spin --spinner dot --title "Inyectando repositorios de Artix Linux" -- sleep 2
 
     cat << 'EOF' > /tmp/pacman-artix.conf
@@ -40,7 +40,7 @@ run_bootstrap_openrc() {
 HoldPkg     = pacman glibc
 Architecture = auto
 CheckSpace
-SigLevel    = Required DatabaseOptional
+SigLevel    = Optional TrustAll
 LocalFileSigLevel = Optional
 
 [system]
@@ -51,10 +51,10 @@ Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 EOF
 
-    # Paquetes base esenciales para Artix con OpenRC
-    local artix_pkgs="base base-devel openrc openrc-system w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
+    # Paquetes base para Artix con OpenRC (incluyendo artix-keyring)
+    local artix_pkgs="base base-devel artix-keyring artix-archlinux-support openrc openrc-system w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
 
-    # 4. Instalación directa sobre /mnt con el pacman.conf inyectado
+    # 4. Instalación directa sobre /mnt
     echo ""
     msg_info "Instalando paquetes base con pacman (Artix Repos) en /mnt..."
     
@@ -64,7 +64,7 @@ EOF
     if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --dbpath /mnt/var/lib/pacman --cachedir /mnt/var/cache/pacman/pkg $artix_pkgs; then
         # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
-        fstabgen -U /mnt >> /mnt/etc/fstab
+        genfstab -U /mnt >> /mnt/etc/fstab
         msg_success "¡Bootstrap de OpenRC e inyección de Artix completados con éxito!"
     else
         msg_error "Error al instalar los paquetes de Artix en /mnt."
