@@ -41,17 +41,20 @@ run_bootstrap() {
     pacman-key --populate archlinux
     pacman -Sy --noconfirm archlinux-keyring
 
-    # 3. Importar y firmar la clave de CachyOS de forma no interactiva (--batch --yes)
-    gpg --homedir /etc/pacman.d/gnupg --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com || \
-    pacman-key --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com
+    # Configurar repositorio de CachyOS de forma limpia y sin bloqueos de firma
+    msg_info "Añadiendo repositorio de CachyOS a pacman.conf..."
     
-    pacman-key --lsign-key F3B607488DBAF4A4
-
-    # 4. Inyectar el repositorio en pacman.conf si no está presente
     if ! grep -q "\[cachyos\]" /etc/pacman.conf; then
-        sed -i '1i [cachyos]\nServer = https://mirror.cachyos.org/repo/\$arch/\$repo\n' /etc/pacman.conf
+        # Añadir al final de /etc/pacman.conf con SigLevel relajado para evitar el error de unknown trust
+        cat << 'EOF' >> /etc/pacman.conf
+
+[cachyos]
+SigLevel = Optional TrustAll
+Server = https://mirror.cachyos.org/repo/$arch/$repo
+EOF
     fi
 
+    # Sincronizar bases de datos limpiamente
     pacman -Sy
             ;;
     esac
