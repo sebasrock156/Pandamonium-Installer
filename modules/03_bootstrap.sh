@@ -30,24 +30,29 @@ run_bootstrap() {
             kernel_pkg="linux-cachyos"
             
             msg_info "Configurando llavero y repositorio de CachyOS..."
-            
-            # Inicializar y poblar el keyring si fuera necesario para evitar rechazos de firmas
-            rm -rf /etc/pacman.d/gnupg
-            pacman-key --init
-            pacman-key --populate archlinux
-            pacman -Sy archlinux-keyring
+    
+    # 1. Matar procesos huérfanos de gpg-agent y limpiar de forma limpia
+    pkill -9 gpg-agent 2>/dev/null || true
+    pkill -9 dirmngr 2>/dev/null || true
+    rm -rf /etc/pacman.d/gnupg
+    
+    # 2. Inicializar el llavero correctamente
+    pacman-key --init
+    pacman-key --populate archlinux
+    pacman -Sy --noconfirm archlinux-keyring
 
-            # Descargar y firmar localmente la clave oficial de CachyOS
-            pacman-key --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com
-            pacman-key --lsign-key F3B607488DBAF4A4
-            
-            if ! grep -q "\[cachyos\]" /etc/pacman.conf; then
-                # Insertar el repositorio de CachyOS arriba del todo en pacman.conf
-                sed -i '1i [cachyos]\nServer = https://mirror.cachyos.org/repo/\$arch/\$repo\n' /etc/pacman.conf
-            fi
+    # 3. Importar y firmar la clave de CachyOS de forma no interactiva (--batch --yes)
+    gpg --homedir /etc/pacman.d/gnupg --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com || \
+    pacman-key --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com
+    
+    pacman-key --lsign-key F3B607488DBAF4A4
 
-            # Sincronizar bases de datos con el nuevo repositorio y claves listas
-            pacman -Sy
+    # 4. Inyectar el repositorio en pacman.conf si no está presente
+    if ! grep -q "\[cachyos\]" /etc/pacman.conf; then
+        sed -i '1i [cachyos]\nServer = https://mirror.cachyos.org/repo/\$arch/\$repo\n' /etc/pacman.conf
+    fi
+
+    pacman -Sy
             ;;
     esac
 
