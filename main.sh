@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 
-# Pedir al usuario que ejecute como root, en caso de que ARCHISO no lo priorice
 if [ "$EUID" -ne 0 ]; then
-  echo "Por favor, ejecuta el instalador como root (sudo ./main.sh)"
-  exit 1
+    echo "Por favor, ejecuta el instalador como root (sudo ./main.sh)"
+    exit 1
 fi
 
-# Carga de módulos
 source ui/gum_helpers.sh
 source modules/01_network.sh
 source modules/02_disks.sh
@@ -14,58 +12,46 @@ source modules/03_bootstrap.sh
 source modules/04_chroot.sh
 source modules/05_gui.sh
 
+
 main_menu() {
+
     while true; do
-        show_header
-        msg_info "Pandamonium Installer - Otro script de instalación de Arch"
+        # Mostramos los paneles como el selector en sí
+        local selected_panel
+        selected_panel=$(show_interactive_5panel_dashboard)
 
-        local choice
-        choice=$(gum choose \
-            "1. Comprobar y Configurar Red" \
-            "2. Particionado y Montajes" \
-            "3. Bootstrap (Systemd/OpenRC)" \
-            "4. Chroot y Configuración del Sistema" \
-            "5. Elección de GUI (DE/WM)" \
-            "6. Ejecutar Instalación Completa (Secuencial)" \
-            "Salir")
-
-        case "$choice" in
-            "1. Comprobar y Configurar Red")
+        case "$selected_panel" in
+            *"[01] CONFIGURACIÓN DE RED"*)
                 check_and_configure_network
                 ;;
-            "2. Particionado y Montajes")
+            *"[02] PARTICIONADO Y DISCOS"*)
                 setup_disks_and_mounts
                 ;;
-            "3. Bootstrap (Systemd/OpenRC)")
+            *"[03] BOOTSTRAP DEL SISTEMA"*)
                 run_bootstrap
                 ;;
-            "4. Chroot y Configuración del Sistema")
+            *"[04] CONFIGURACIÓN EN CHROOT"*)
                 run_chroot_config
                 ;;
-            "5. Elección de GUI (DE/WM)")
+            *"[05] ENTORNO GRÁFICO"*)
                 gui_sel
                 ;;
-            "6. Ejecutar Instalación Completa (Secuencial)")
+            *"EJECUTAR INSTALACIÓN COMPLETA"*)
+                msg_info "Lanzando secuencia completa de instalación..."
                 check_and_configure_network
                 setup_disks_and_mounts
                 run_bootstrap
                 run_chroot_config
                 gui_sel
-                msg_success "¡Instalación completada!"
+                msg_success "¡Instalación finalizada con éxito!"
                 sleep 3
                 ;;
-            "Salir")
-                msg_info "Saliendo del instalador..."
+            *"SALIR"*)
+                msg_info "Saliendo de Pandamonium..."
                 exit 0
                 ;;
         esac
-
-        # Pausa previa al retorno
-        echo ""
-        msg_info "Pulsa Intro para volver al menú principal..."
-        read -r
     done
 }
 
-# Menú principal
 main_menu
