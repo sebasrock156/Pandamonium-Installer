@@ -57,9 +57,10 @@ EOF
     # 4. Instalación directa sobre /mnt con el pacman.conf inyectado
     echo ""
     msg_info "Instalando paquetes base con pacman (Artix Repos) en /mnt..."
+    
     mkdir -p /mnt/var/lib/pacman
     
-    if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --noconfirm $artix_pkgs; then
+    if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --cachedir /var/cache/pacman/pkg $artix_pkgs; then
         # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
         genfstab -U /mnt >> /mnt/etc/fstab
