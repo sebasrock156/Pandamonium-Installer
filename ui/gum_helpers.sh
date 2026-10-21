@@ -66,3 +66,12 @@ show_interactive_panel_dashboard() {
     # Indicador de foco invisible
     gum choose --cursor "" "$p1" "$p2" "$p3" "$p4" "$p5" "$p6" "$p_all" "$b_exit_right"
 }
+
+confirm_action() {
+    local message="$1"
+    if gum confirm "$message"; then
+        return 0 # True / Sí
+    else
+        return 1 # False / No
+    fi
+}
