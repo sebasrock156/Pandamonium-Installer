@@ -138,7 +138,7 @@ gui_sel() {
     # 2. Habilitación de servicios según el Init registrado
     if [ "$init_system" = "openrc" ]; then
         # Gestión para OpenRC en Artix
-        $chroot_cmd /mnt rc-update add networkmanager default
+        $chroot_cmd /mnt rc-update add NetworkManager default
         [ -n "$display_manager" ] && $chroot_cmd /mnt rc-update add "$display_manager" default
     else
         # Gestión para SystemD en Arch oficial
