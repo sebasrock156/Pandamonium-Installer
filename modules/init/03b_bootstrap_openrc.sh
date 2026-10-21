@@ -4,7 +4,7 @@ source ui/gum_helpers.sh
 
 run_bootstrap_openrc() {
     show_header
-    msg_info "Modo Bootstrap: OpenRC (Artix Linux Repos)"
+    msg_info "Modo Bootstrap: OpenRC (Artix Linux Repos Oficiales)"
 
     # 1. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
@@ -32,38 +32,19 @@ run_bootstrap_openrc() {
         msg_success "-> Procesador AMD detectado: Se instalará amd-ucode."
     fi
 
-    # 3. Configuración de repositorios para Artix Linux
-    gum spin --spinner dot --title "Configurando entorno para OpenRC" -- sleep 2
+    # Paquetes esenciales para Artix con OpenRC (evitamos nombrar demonios deprecados o fantasmas)
+    local artix_pkgs="base base-devel openrc openrc-system w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
 
-    cat << 'EOF' > /tmp/pacman-artix.conf
-[options]
-HoldPkg     = pacman glibc
-Architecture = auto
-CheckSpace
-SigLevel    = Required DatabaseOptional
-LocalFileSigLevel = Optional
-
-[system]
-Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
-[world]
-Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
-[galaxy]
-Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
-EOF
-
-    # Paquetes esenciales para OpenRC
-    local artix_pkgs="base base-devel openrc openrc-system eudev w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
-
-    # 4. Instalación vía pacman directo sobre /mnt
+    # 3. Instalación vía basestrap de Artix
     echo ""
-    msg_info "Iniciando pacman con repositorio Artix en /mnt..."
-    if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --noconfirm $artix_pkgs; then
-        # 5. Generación del FSTAB
+    msg_info "Ejecutando basestrap de Artix en /mnt..."
+    if basestrap /mnt $artix_pkgs; then
+        # 4. Generación del FSTAB con fstabgen
         msg_info "Generando archivo fstab..."
-        genfstab -U /mnt >> /mnt/etc/fstab
-        msg_success "¡Bootstrap (OpenRC) y fstab generados correctamente!"
+        fstabgen -U /mnt >> /mnt/etc/fstab
+        msg_success "¡Bootstrap (OpenRC) y fstab generados correctamente con herramientas nativas!"
     else
-        msg_error "Error al instalar paquetes base de Artix/OpenRC."
+        msg_error "Error al ejecutar basestrap con los repositorios de Artix."
     fi
 
     sleep 2
