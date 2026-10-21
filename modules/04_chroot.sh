@@ -6,14 +6,20 @@ run_chroot_config() {
     show_header
     msg_info "Configuración Post-Instalación en Chroot"
 
-    # Determinamos qué comando de chroot usar según la existencia de openrc o systemd
-    local chroot_cmd="arch-chroot"
-    if [ -d /mnt/etc/openrc ]; then
-        chroot_cmd="artix-chroot"
-        msg_info "Entorno Artix detectado. Usando artix-chroot..."
-    else
-        msg_info "Entorno Arch detectado. Usando arch-chroot..."
+    # Determinamos el gestor de init leyendo el archivo de estado compartido
+    local init_system="systemd"
+    if [ -f /tmp/pandamonium_init ]; then
+        init_system=$(cat /tmp/pandamonium_init)
     fi
+
+    if [ "$init_system" = "openrc" ]; then
+        msg_info "Modo Artix (OpenRC) detectado por estado. Usando arch-chroot..."
+    else
+        msg_info "Modo Arch (SystemD) detectado por estado. Usando arch-chroot..."
+    fi
+
+    # Usamos arch-chroot universalmente ya que artix-chroot no existe en la ISO base de Arch
+    local chroot_cmd="arch-chroot"
 
     # --- Interacción previa con Gum (fuera del chroot) ---
 
@@ -47,7 +53,7 @@ run_chroot_config() {
     show_header
     msg_info "Nombre del equipo (Hostname)"
     local hostname
-    hostname=$(gum input --placeholder "Introduce el hostname (ej. mi-pc):" --value "arch-pc")
+    hostname=$(gum input --placeholder "Introduce el hostname (ej. mi-pc):" --value "pandamonium-pc")
 
     # 5. Contraseña de Root obligatoria y segura
     show_header
@@ -65,10 +71,9 @@ run_chroot_config() {
             msg_error "Las contraseñas no coinciden o están vacías. Inténtalo de nuevo."
         fi
     done
+# --- Generación del script interno con las variables capturadas ---
 
-    # --- Generación del script interno con las variables capturadas ---
-
-    cat << EOF > /mnt/tmp/configure_system.sh
+cat << EOF > /mnt/tmp/configure_system.sh
 #!/usr/bin/env bash
 
 # 1. Zona horaria
@@ -82,15 +87,14 @@ locale-gen
 echo "LANG=$selected_locale" > /etc/locale.conf
 echo "KEYMAP=$selected_keymap" > /etc/vconsole.conf
 
-# 3. Hostname y Hosts (Sin comillas en HOSTS para permitir la expansión de \$hostname)
+# 3. Hostname y Hosts
 echo "$hostname" > /etc/hostname
-cat << HOSTS > /etc/hosts
-127.0.0.1   localhost
-::1         localhost
-127.0.1.1   $hostname.localdomain   $hostname
-HOSTS
+echo "127.0.0.1   localhost" > /etc/hosts
+echo "::1         localhost" >> /etc/hosts
+echo "127.0.1.1   $hostname.localdomain   $hostname" >> /etc/hosts
 
 EOF
+    
 
     # Damos permisos y ejecutamos el script base dentro del chroot
     chmod +x /mnt/tmp/configure_system.sh
@@ -124,7 +128,12 @@ EOF
 
     local bootloader_choice
     if [ -d /sys/firmware/efi/efivars ]; then
-        bootloader_choice=$(gum choose "GRUB (Universal y flexible)" "systemd-boot (Nativo UEFI, ligero)")
+        if [ "$init_system" = "openrc" ]; then
+            msg_info "Entorno OpenRC detectado: Forzando GRUB (más seguro y compatible con OpenRC)."
+            bootloader_choice="GRUB (Universal y flexible)"
+        else
+            bootloader_choice=$(gum choose "GRUB (Universal y flexible)" "systemd-boot (Nativo UEFI, ligero)")
+        fi
     else
         msg_info "Modo BIOS/Legacy detectado. systemd-boot no está disponible."
         bootloader_choice="GRUB (Universal y flexible)"
@@ -136,7 +145,7 @@ EOF
             if [ -d /sys/firmware/efi/efivars ]; then
                 msg_info "Instalando GRUB para UEFI..."
                 $chroot_cmd /mnt pacman -S --noconfirm grub efibootmgr
-                $chroot_cmd /mnt grub-install --target=x86_64-efi --efi-directory=/boot/EFI --bootloader-id=GRUB
+                $chroot_cmd /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
             else
                 msg_info "Instalando GRUB para BIOS/Legacy..."
                 local target_disk_boot
@@ -145,6 +154,7 @@ EOF
                 $chroot_cmd /mnt grub-install --target=i386-pc "$target_disk_boot"
             fi
             $chroot_cmd /mnt grub-mkconfig -o /boot/grub/grub.cfg
+            msg_success "GRUB configurado e instalado correctamente."
             ;;
 
         "systemd-boot (Nativo UEFI, ligero)")
