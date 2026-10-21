@@ -92,7 +92,7 @@ gui_sel() {
                     fi
                     display_manager="lightdm"
                     ;;
-            endcase
+            esac
             ;;
 
         "Gestor de Ventanas (WM)")
@@ -127,7 +127,7 @@ gui_sel() {
                     fi
                     display_manager="lightdm"
                     ;;
-            endcase
+            esac
             ;;
 
         "Ninguno (Solo CLI / Servidor)")
@@ -137,7 +137,7 @@ gui_sel() {
 
     # 2. Habilitación de servicios según el Init registrado
     if [ "$init_system" = "openrc" ]; then
-        # Gestión para OpenRC en Artix (usando nombres de servicios correctos)
+        # Gestión para OpenRC en Artix
         $chroot_cmd /mnt rc-update add networkmanager default
         [ -n "$display_manager" ] && $chroot_cmd /mnt rc-update add "$display_manager" default
     else
