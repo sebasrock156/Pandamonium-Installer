@@ -45,7 +45,7 @@ main_menu() {
             "5. Elección de GUI (DE/WM)")
                 run_desktop_selection
                 ;;
-            " Ejecutar Instalación Completa (Secuencial)")
+            "6. Ejecutar Instalación Completa (Secuencial)")
                 check_and_configure_network
                 setup_disks_and_mounts
                 run_bootstrap
