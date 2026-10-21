@@ -6,17 +6,21 @@ gui_sel() {
     show_header
     msg_info "Selección de Interfaz Gráfica (Entornos y Gestores de Ventanas)"
 
-    # Determinamos el comando de chroot y el gestor de servicios activo
-    local chroot_cmd="arch-chroot"
-    local enable_service_cmd=""
-    local display_manager=""
-
-    if [ -d /mnt/etc/openrc ]; then
-        chroot_cmd="artix-chroot"
-        msg_info "Entorno Artix detectado. Usando gestión de servicios con OpenRC..."
-    else
-        msg_info "Entorno Arch detectado. Usando gestión de servicios con SystemD..."
+    # Determinamos el gestor de servicios activo leyendo el archivo de estado compartido
+    local init_system="systemd"
+    if [ -f /tmp/pandamonium_init ]; then
+        init_system=$(cat /tmp/pandamonium_init)
     fi
+
+    if [ "$init_system" = "openrc" ]; then
+        msg_info "Modo Artix detectado por estado. Usando gestión de servicios con OpenRC..."
+    else
+        msg_info "Modo Arch detectado por estado. Usando gestión de servicios con SystemD..."
+    fi
+
+    # Usamos arch-chroot universalmente ya que artix-chroot no existe en la ISO base de Arch
+    local chroot_cmd="arch-chroot"
+    local display_manager=""
 
     # 1. Elegir la categoría principal
     local choice_type
@@ -89,8 +93,8 @@ gui_sel() {
             ;;
     esac
 
-    # 2. Habilitación de servicios según el Init detectado
-    if [ "$chroot_cmd" = "artix-chroot" ]; then
+    # 2. Habilitación de servicios según el Init registrado
+    if [ "$init_system" = "openrc" ]; then
         # Gestión para OpenRC en Artix
         $chroot_cmd /mnt rc-update add NetworkManager default
         [ -n "$display_manager" ] && $chroot_cmd /mnt rc-update add "$display_manager" default
