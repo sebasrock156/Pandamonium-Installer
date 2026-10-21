@@ -32,8 +32,10 @@ run_bootstrap() {
             msg_info "Configurando llavero y repositorio de CachyOS..."
             
             # Inicializar y poblar el keyring si fuera necesario para evitar rechazos de firmas
+            rm -rf /etc/pacman.d/gnupg
             pacman-key --init
             pacman-key --populate archlinux
+            pacman -Sy archlinux-keyring
 
             # Descargar y firmar localmente la clave oficial de CachyOS
             pacman-key --recv-keys F3B607488DBAF4A4 --keyserver keyserver.ubuntu.com
