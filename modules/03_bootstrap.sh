@@ -73,11 +73,11 @@ Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 EOF
 
-        local artix_pkgs="base openrc openrc-system eudev w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
+        # Sustituimos el problemático eudev por systemd-udev (standalone para Artix) asegurando estabilidad
+        local artix_pkgs="base openrc openrc-system systemd-udev w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
         
         msg_info "Iniciando instalación mediante pacstrap (OpenRC)..."
         echo ""
-        # Usamos yes "" para responder automáticamente al selector de grupos de openrc-system
         yes "" | pacstrap -C /tmp/pacman-artix.conf /mnt $artix_pkgs
     fi
 
