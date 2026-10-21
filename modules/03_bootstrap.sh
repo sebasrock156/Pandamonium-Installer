@@ -78,7 +78,7 @@ EOF
         msg_info "Iniciando instalación mediante pacstrap (OpenRC)..."
         echo ""
         # Usamos pacstrap con el parámetro -C para leer los repositorios de Artix correctamente
-        pacstrap -C /tmp/pacman-artix.conf /mnt $artix_pkgs
+        pacstrap -n -C /tmp/pacman-artix.conf /mnt $artix_pkgs
     fi
 
     # Comprobar si el bootstrap se completó antes de generar el fstab
