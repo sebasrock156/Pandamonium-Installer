@@ -18,9 +18,15 @@ gui_sel() {
         msg_info "Modo Arch detectado por estado. Usando gestión de servicios con SystemD..."
     fi
 
-    # Usamos arch-chroot universalmente ya que artix-chroot no existe en la ISO base de Arch
     local chroot_cmd="arch-chroot"
     local display_manager=""
+
+    # Inicializar el keyring dentro del chroot antes de instalar nada gráfico
+    if [ "$init_system" = "openrc" ]; then
+        msg_info "Inicializando keyring de Artix en el chroot..."
+        $chroot_cmd /mnt pacman-key --init
+        $chroot_cmd /mnt pacman-key --populate artix
+    fi
 
     # 1. Elegir la categoría principal
     local choice_type
@@ -34,35 +40,59 @@ gui_sel() {
             case "$de_choice" in
                 "KDE Plasma")
                     msg_info "Instalando KDE Plasma y SDDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm plasma kde-applications sddm
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm plasma kde-applications sddm sddm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm plasma kde-applications sddm
+                    fi
                     display_manager="sddm"
                     ;;
                 "Gnome")
                     msg_info "Instalando Gnome y GDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm gnome gnome-extra gdm
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm gnome gnome-extra gdm gdm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm gnome gnome-extra gdm
+                    fi
                     display_manager="gdm"
                     ;;
                 "Cinnamon")
                     msg_info "Instalando Cinnamon y LightDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm cinnamon lightdm lightdm-gtk-greeter
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm cinnamon lightdm lightdm-gtk-greeter lightdm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm cinnamon lightdm lightdm-gtk-greeter
+                    fi
                     display_manager="lightdm"
                     ;;
                 "XFCE")
                     msg_info "Instalando XFCE y LightDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm xfce4 xfce4-goodies lightdm lightdm-gtk-greeter
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm xfce4 xfce4-goodies lightdm lightdm-gtk-greeter lightdm-openrc networkmanager-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm xfce4 xfce4-goodies lightdm lightdm-gtk-greeter
+                    fi
                     display_manager="lightdm"
                     ;;
                 "Budgie")
                     msg_info "Instalando Budgie y LightDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm budgie-desktop budgie-extras lightdm lightdm-gtk-greeter
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm budgie-desktop budgie-extras lightdm lightdm-gtk-greeter lightdm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm budgie-desktop budgie-extras lightdm lightdm-gtk-greeter
+                    fi
                     display_manager="lightdm"
                     ;;
                 "Mate")
                     msg_info "Instalando Mate y LightDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm mate mate-extra lightdm lightdm-gtk-greeter
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm mate mate-extra lightdm lightdm-gtk-greeter lightdm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm mate mate-extra lightdm lightdm-gtk-greeter
+                    fi
                     display_manager="lightdm"
                     ;;
-            esac
+            endcase
             ;;
 
         "Gestor de Ventanas (WM)")
@@ -72,20 +102,32 @@ gui_sel() {
             case "$wm_choice" in
                 "i3")
                     msg_info "Instalando i3-wm, dmenu y LightDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm i3-wm i3status dmenu lightdm lightdm-gtk-greeter
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm i3-wm i3status dmenu lightdm lightdm-gtk-greeter lightdm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm i3-wm i3status dmenu lightdm lightdm-gtk-greeter
+                    fi
                     display_manager="lightdm"
                     ;;
                 "Hyprland")
                     msg_info "Instalando Hyprland, Waybar y SDDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm hyprland waybar kitty wofi sddm
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm hyprland waybar kitty wofi sddm sddm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm hyprland waybar kitty wofi sddm
+                    fi
                     display_manager="sddm"
                     ;;
                 "Fluxbox / Openbox")
                     msg_info "Instalando Openbox, Fluxbox y LightDM..."
-                    $chroot_cmd /mnt pacman -S --noconfirm openbox fluxbox obconf lightdm lightdm-gtk-greeter
+                    if [ "$init_system" = "openrc" ]; then
+                        $chroot_cmd /mnt pacman -S --noconfirm openbox fluxbox obconf lightdm lightdm-gtk-greeter lightdm-openrc
+                    else
+                        $chroot_cmd /mnt pacman -S --noconfirm openbox fluxbox obconf lightdm lightdm-gtk-greeter
+                    fi
                     display_manager="lightdm"
                     ;;
-            esac
+            endcase
             ;;
 
         "Ninguno (Solo CLI / Servidor)")
@@ -95,8 +137,8 @@ gui_sel() {
 
     # 2. Habilitación de servicios según el Init registrado
     if [ "$init_system" = "openrc" ]; then
-        # Gestión para OpenRC en Artix
-        $chroot_cmd /mnt rc-update add NetworkManager default
+        # Gestión para OpenRC en Artix (usando nombres de servicios correctos)
+        $chroot_cmd /mnt rc-update add networkmanager default
         [ -n "$display_manager" ] && $chroot_cmd /mnt rc-update add "$display_manager" default
     else
         # Gestión para SystemD en Arch oficial
