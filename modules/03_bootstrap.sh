@@ -48,7 +48,7 @@ run_bootstrap() {
     mkdir -p /mnt/var/lib/pacman /mnt/etc
 
     # 3. Ejecución según el Init elegido
-    if [[ "$init_choice" == *"SystemD"* ]]; then
+    if [[ "$init_choice" == *"Systemd"* ]]; then
         local essential_pkgs="base base-devel nano htop fastfetch w3m $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog systemd systemd-sysvcompat"
         
         msg_info "Iniciando instalación mediante pacstrap (Systemd)..."
