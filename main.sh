@@ -11,14 +11,17 @@ source modules/02_disks.sh
 source modules/03_bootstrap.sh
 source modules/04_chroot.sh
 source modules/05_gui.sh
-
+source modules/06_extras.sh
 
 main_menu() {
-
     while true; do
+        # Limpiar la pantalla por completo en cada ciclo del menú principal
+        clear
+        show_header
+
         # Mostramos los paneles como el selector en sí
         local selected_panel
-        selected_panel=$(show_interactive_5panel_dashboard)
+        selected_panel=$(show_interactive_panel_dashboard)
 
         case "$selected_panel" in
             *"[01] CONFIGURACIÓN DE RED"*)
@@ -36,6 +39,9 @@ main_menu() {
             *"[05] ENTORNO GRÁFICO"*)
                 gui_sel
                 ;;
+            *"[06] EXTRAS"*)
+                extras_sel
+                ;;
             *"EJECUTAR INSTALACIÓN COMPLETA"*)
                 msg_info "Lanzando secuencia completa de instalación..."
                 check_and_configure_network
@@ -43,6 +49,7 @@ main_menu() {
                 run_bootstrap
                 run_chroot_config
                 gui_sel
+                extras_sel
                 msg_success "¡Instalación finalizada con éxito!"
                 sleep 3
                 ;;
