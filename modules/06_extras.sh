@@ -78,7 +78,7 @@ extras_sel() {
                 ;;
             *"[04]"*)
                 _select_category_pkgs "Desarrollo y Programación" \
-                    "git" "wget" "curl" "python" "go" "gcc" "cmake" "code" "visual-studio-code-bin"
+                    "git" "wget" "curl" "python" "go" "gcc" "cmake" "code" "visual-studio-code-bin" "sublime-text-4"
                 ;;
             *"[05]"*)
                 _select_category_pkgs "Ofimática y Lectores" \
