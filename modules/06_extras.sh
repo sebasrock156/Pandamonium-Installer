@@ -66,7 +66,8 @@ extras_sel() {
             "[08] Editores de Audio y Vídeo" \
             "[09] ArtCraft AI Slop" \
             "[10] Utilidades del Sistema" \
-            "[11] INSTALAR PAQUETES SELECCIONADOS" \
+            "[11] Virtualización y Contenedores" \
+            "[12] INSTALAR PAQUETES SELECCIONADOS" \
             " ↩ VOLVER AL MENÚ PRINCIPAL")
 
         case "$cat_choice" in
