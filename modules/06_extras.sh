@@ -18,7 +18,7 @@ _select_category_pkgs() {
     echo
 
     local choices
-    # gum choose devuelve las líneas completas seleccionadas (ej. "firefox — Navegador web...")
+    # gum choose devuelve las líneas completas seleccionadas
     mapfile -t choices < <(gum choose --no-limit --cursor "➔ " "${available_pkgs[@]}")
 
     if [ ${#choices[@]} -gt 0 ]; then
@@ -49,7 +49,7 @@ extras_sel() {
             msg_success "Paquetes marcados (${#current_pkgs[@]}): ${current_pkgs[*]}"
         else
             msg_info "No hay paquetes marcados para instalar aún."
-             msg_info "NOTA: Etiqueta (AUR): Para compilar con Paru o Yay | Etiqueta (Chaotic): Ya precompilados"
+            msg_info "NOTA: Etiqueta (AUR): Requiere Paru/Yay | Etiqueta (Chaotic): Precompilados"
         fi
         echo
 
@@ -68,7 +68,7 @@ extras_sel() {
             "[10] Utilidades del Sistema" \
             "[11] Virtualización y Contenedores" \
             "[12] INSTALAR PAQUETES SELECCIONADOS" \
-            " ↩ VOLVER AL MENÚ PRINCIPAL")
+            "[13] ↩ VOLVER AL MENÚ PRINCIPAL")
 
         case "$cat_choice" in
             *"[01]"*)
@@ -86,9 +86,8 @@ extras_sel() {
                     "microsoft-edge-stable-bin — (AUR) Navegador web oficial de Microsoft" \
                     "midori-bin — (AUR) Navegador web ligero basado en Firefox" \
                     "opera — (AUR) Navegador web oficial de Opera" \
-                    "opera-gx — Navegador web oficial de Opera para Gamers"
+                    "opera-gx — (AUR) Navegador web oficial de Opera para Gamers"
                 ;;
-
             *"[03]"*)
                 _select_category_pkgs "Comunicación y Mensajería" \
                     "telegram-desktop — Aplicación oficial de Telegram" \
@@ -96,14 +95,14 @@ extras_sel() {
                     "teams-for-linux — (Chaotic) Cliente no oficial de Microsoft Teams"
                 ;;
             *"[04]"*)
-                _select_category_pkgs "Reproductores de Vídeo" \
+                _select_category_pkgs "Reproductores de Vídeo y Música" \
                     "vlc — Reproductor multimedia universal todoterreno" \
                     "mpv — Reproductor multimedia minimalista basado en MPlayer" \
                     "celluloid — Interfaz gráfica elegante para MPV" \
                     "audacious — Reproductor multimedia avanzado" \
                     "tauon-music-box — Tu reproductor musical de otra galaxia" \
                     "feishin — Reproductor moderno de música en local" \
-                    "spotify — (AUR) Un servicio de música por streaming privativo"
+                    "spotify — (AUR) Servicio de música por streaming privativo"
                 ;;
             *"[05]"*)
                 _select_category_pkgs "Desarrollo y Programación" \
@@ -120,7 +119,7 @@ extras_sel() {
                     "sublime-text-4 — (Chaotic) Editor de texto avanzado para código y marcado" \
                     "antigravity — (AUR) IDE impulsado por agentes desarrollado por Google" \
                     "lmstudio-bin — (AUR) Gestor de agentes y modelos para uso local" \
-                    "claude-code — (AUR)"
+                    "claude-code — (AUR) Asistente interactivo en terminal de Anthropic"
                 ;;
             *"[06]"*)
                 _select_category_pkgs "Ofimática y Lectores" \
@@ -134,29 +133,29 @@ extras_sel() {
                     "blender — Suite de creación 3D completa" \
                     "librecad — Edición comunitaria de QCad" \
                     "gimp — Programa libre de edición de imágenes rasterizadas" \
-                    "pinta — Programa de dibujo libre con una estética similar a PaintdotNET"
+                    "pinta — Programa de dibujo libre estilo Paint.NET"
                 ;;
             *"[08]"*)
                 _select_category_pkgs "Editores de Audio y Vídeo" \
                     "audacity — Editor multipista de audio" \
                     "kdenlive — Editor de vídeo desarrollado por KDE" \
-                    "davinci-resolve — (AUR) Editor de vídeo de grado profesional" 
+                    "davinci-resolve — (AUR) Editor de vídeo de grado profesional"
                 ;;
-           *"[09]"*)
-                _select_category_pkgs "ArtCraft AI Slop" \ #Solo está aquí porque sé que muchos lo desean.
+            *"[09]"*)
+                # Solo está aquí porque sé que muchos lo desean.
+                _select_category_pkgs "ArtCraft AI Slop" \
                     "photocraft — (Chaotic) Photoshop vibecodeado, colorimetría errónea" \
                     "filmcraft — (Chaotic) Premiere vibecodeado, mal tiempo de rendering" \
-                    "pdfcraft — (Chaotic) Editor y lector de PFDs vibecodeado, no esperes mucho más" \
-                    "effectcraft — (Chaotic) AfterEffects vibecodeado, sin buen timeline de animación" \
-                    "vectorcraft — (Chaotic) Illustrator vibecodeado, no entiende algunos vectores" \
-                    "lightcraft — (Chaotic) Lightroom vibecodeado, los filtros y colores funcionan mal" \
-                    "cadcraft — (Chaotic) AutoCAD vibecodeado, sin todas las implementaciones de escala" \
+                    "pdfcraft — (Chaotic) Editor y lector de PDFs vibecodeado" \
+                    "effectcraft — (Chaotic) AfterEffects vibecodeado, sin buen timeline" \
+                    "vectorcraft — (Chaotic) Illustrator vibecodeado, no entiende vectores" \
+                    "lightcraft — (Chaotic) Lightroom vibecodeado, filtros/colores erróneos" \
+                    "cadcraft — (Chaotic) AutoCAD vibecodeado, sin escala implementada" \
                     "wordcraft — (Chaotic) Word vibecodeado, sin citas o estilos" \
-                    "gridcraft — (Chaotic) Excel vibecodeado, sin macros y bases de datos" \
-                    "deckcraft — (Chaotic) PowerPoint vibecodeado, no esperes gran cosa" \
-                    "soundcraft — (Chaotic) Avid Pro Tools vibecodeado, Open Source del mismo" 
-                    
-                ;; 
+                    "gridcraft — (Chaotic) Excel vibecodeado, sin macros o DB" \
+                    "deckcraft — (Chaotic) PowerPoint vibecodeado, muy básico" \
+                    "soundcraft — (Chaotic) Avid Pro Tools vibecodeado"
+                ;;
             *"[10]"*)
                 _select_category_pkgs "Utilidades del Sistema" \
                     "htop — Monitor interactivo de procesos en terminal" \
@@ -166,16 +165,17 @@ extras_sel() {
                     "p7zip — Compresor de archivos de alta tasa con soporte 7z"
                 ;;
             *"[11]"*)
-                msg_info "Estos paquetes necesitan de una versión estable del kernel para no romper dependencias con DKMS" \
+                msg_info "Nota: Virtualización requiere kernel estable para evitar incompatibilidades DKMS."
+                sleep 1.5
                 _select_category_pkgs "Virtualización y Contenedores" \
-                    "docker — Adminstrador de aplicaciones en contenedores" \
-                    "docker-desktop — (AUR) Interfaz gráfica de Docker (recomendado instalar junto a docker)" \
-                    "kubeadm — Orquestador de contenedores para gestión de aplicaciones (recomendado instalar junto a kubelet)" \
-                    "kubelet — Agente de automatización de nodos (recomendado instalar junto a kubeadm)" \
-                    "qemu-full — Hipervisor (cliente) de alta fidelidad (recomendado usar junto a Virt Manager)" \
-                    "virt-manager — Hipervisor gráfico que usa KVM (recomendado usar junto a QEMU)" \
-                    "vmware-workstation — (AUR) Hipervisor gráfico de Broadcom (recomendado instalar linux firmware según tu kernel)" \
-                    "virtualbox — Hipervisor gráfico de Oracle (recomendado instalar virtualbox host dkms para mejor integración)"
+                    "docker — Administrador de aplicaciones en contenedores" \
+                    "docker-desktop — (AUR) Interfaz gráfica de Docker" \
+                    "kubeadm — Orquestador de contenedores para gestión de nodos" \
+                    "kubelet — Agente de automatización de nodos Kubernetes" \
+                    "qemu-full — Hipervisor de alta fidelidad" \
+                    "virt-manager — Hipervisor gráfico KVM/QEMU" \
+                    "vmware-workstation — (AUR) Hipervisor gráfico de Broadcom" \
+                    "virtualbox — Hipervisor gráfico de Oracle"
                 ;;
             *"[12]"*)
                 local pkgs_to_install=("${!SELECTED_EXTRA_PKGS_MAP[@]}")
@@ -183,9 +183,7 @@ extras_sel() {
                     msg_error "No has marcado ningún paquete para instalar."
                     sleep 2
                 else
-                    # -------------------------------------------------------------
                     # Detección y Sugerencia de Chaotic-AUR
-                    # -------------------------------------------------------------
                     local has_chaotic=false
                     for pkg in "${pkgs_to_install[@]}"; do
                         if [ "$pkg" == "chaotic-mirrors" ]; then
@@ -194,10 +192,9 @@ extras_sel() {
                         fi
                     done
 
-                    # Si el usuario NO marcó Chaotic, se lo sugerimos interactivamente
                     if [ "$has_chaotic" == "false" ]; then
                         echo
-                        msg_info "Sugerencia: Activar Chaotic-AUR permite instalar paquetes de AUR (yay, paru, google-chrome, etc.) con pacman directo."
+                        msg_info "Sugerencia: Activar Chaotic-AUR permite instalar paquetes de AUR con pacman directo."
                         if gum confirm "¿Deseas activar Chaotic-AUR antes de instalar?"; then
                             SELECTED_EXTRA_PKGS_MAP["chaotic-mirrors"]=1
                             pkgs_to_install=("${!SELECTED_EXTRA_PKGS_MAP[@]}")
@@ -213,9 +210,6 @@ extras_sel() {
                     local run_cmd=""
                     [ "$target_dir" == "/mnt" ] && run_cmd="arch-chroot /mnt"
 
-                    # -------------------------------------------------------------
-                    # Configuración de Chaotic-AUR si corresponde
-                    # -------------------------------------------------------------
                     if [ "$has_chaotic" == "true" ]; then
                         msg_info "Añadiendo llaves y repositorio Chaotic-AUR..."
 
@@ -235,16 +229,12 @@ extras_sel() {
                         $run_cmd pacman -Sy
                     fi
 
-                    # Filterout 'chaotic-mirrors' para no enviarlo como nombre de paquete a pacman
                     local final_pkgs=()
                     for pkg in "${pkgs_to_install[@]}"; do
                         [ "$pkg" == "chaotic-mirrors" ] && continue
                         final_pkgs+=("$pkg")
                     done
 
-                    # -------------------------------------------------------------
-                    # Instalación directa vía Pacman
-                    # -------------------------------------------------------------
                     if [ ${#final_pkgs[@]} -gt 0 ]; then
                         msg_info "Lanzando pacman para: ${final_pkgs[*]}"
 
@@ -266,7 +256,7 @@ extras_sel() {
                     fi
                 fi
                 ;;
-            *"[09]"*|*)
+            *"[13]"*|*)
                 return
                 ;;
         esac
