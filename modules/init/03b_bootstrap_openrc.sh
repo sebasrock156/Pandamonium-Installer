@@ -4,20 +4,25 @@ source ui/gum_helpers.sh
 
 run_bootstrap_openrc() {
     show_header
-    msg_info "Modo Bootstrap: OpenRC (Artix Linux vía Inyección)"
+    msg_info "Modo Bootstrap: OpenRC (ArchLinux => Artix Linux)"
 
     # 1. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
     local kernel_choice
-    kernel_choice=$(gum choose "linux (Mainline)" "linux-rt (Tiempo real)" "linux-zen (Optimizado para Escritorio/Gaming)")
+    kernel_choice=$(gum choose "linux (Mainline)" "linux-rt (Tiempo real)" "linux-zen (Optimizado para Escritorio/Gaming)" "linux-custom (Compilación en base a tu PC)")
 
     local kernel_pkg="linux"
+    local custom_kernel=false
+    
     case "$kernel_choice" in
         "linux-rt (Tiempo Real)")
             kernel_pkg="linux-rt"
             ;;
         "linux-zen (Optimizado para Escritorio/Gaming)")
             kernel_pkg="linux-zen"
+            ;;
+        "linux-custom (Compilación en base a tu PC)")
+            custom_kernel=true
             ;;
     esac
 
@@ -51,6 +56,12 @@ Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
 EOF
 
+    # Paquetes base para Artix con OpenRC (si es custom kernel, omitimos el paquete precompilado genérico)
+    local base_kernel_pkg="$kernel_pkg"
+    if [ "$custom_kernel" = true ]; then
+        base_kernel_pkg="" # Se compilará dentro del entorno o chroot
+    fi
+
     # Paquetes base para Artix con OpenRC (incluyendo artix-keyring)
     local artix_pkgs="base base-devel artix-keyring artix-archlinux-support openrc openrc-system w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
 
@@ -62,6 +73,24 @@ EOF
     mkdir -p /mnt/var/cache/pacman/pkg
     
     if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --dbpath /mnt/var/lib/pacman --cachedir /mnt/var/cache/pacman/pkg $artix_pkgs; then
+
+    # Si se seleccionó kernel personalizado, preparar entorno de compilación
+        if [ "$custom_kernel" = true ]; then
+            msg_info "Preparando entorno para la compilación del Kernel personalizado..."
+            
+            # Aquí se pueden montar los sistemas de archivos virtuales y lanzar el script de compilación chroot
+            cat << 'EOF' > /mnt/tmp/build_kernel.sh
+            #!/usr/bin/env bash
+            echo "Iniciando configuración y compilación del kernel personalizado a medida..."
+            
+            # Dependencias de compilación
+            pacman -S --noconfirm git bc cpio perl libelf pahole kmod make gcc bison flex
+            # Clonar o configurar fuentes del kernel para compilar con make menuconfig
+            EOF
+            chmod +x /mnt/tmp/build_kernel.sh
+            arch-chroot /mnt /tmp/build_kernel.sh
+        fi
+        
        # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
         genfstab -U /mnt >> /mnt/etc/fstab
