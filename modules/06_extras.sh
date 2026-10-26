@@ -5,7 +5,7 @@ source ui/gum_helpers.sh
 # Mapa asociativo global para acumular la selección entre categorías
 declare -gA SELECTED_EXTRA_PKGS_MAP=()
 
-# Selección interactiva dentro de cada categoría con [X] y Enter]
+# Selección interactiva dentro de cada categoría con [X] y [Enter]
 _select_category_pkgs() {
     local cat_title="$1"
     shift
