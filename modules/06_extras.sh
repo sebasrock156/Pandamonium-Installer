@@ -18,11 +18,14 @@ _select_category_pkgs() {
     echo
 
     local choices
+    # gum choose devuelve las líneas completas seleccionadas (ej. "firefox — Navegador web...")
     mapfile -t choices < <(gum choose --no-limit --cursor "➔ " "${available_pkgs[@]}")
 
     if [ ${#choices[@]} -gt 0 ]; then
-        for pkg in "${choices[@]}"; do
-            pkg="$(echo "$pkg" | xargs)"
+        for item in "${choices[@]}"; do
+            # Extraer únicamente el nombre técnico del paquete (lo que está antes del separador " — ")
+            local pkg
+            pkg=$(echo "$item" | awk -F ' — ' '{print $1}' | xargs)
             if [ -n "$pkg" ]; then
                 SELECTED_EXTRA_PKGS_MAP["$pkg"]=1
             fi
@@ -46,6 +49,7 @@ extras_sel() {
             msg_success "Paquetes marcados (${#current_pkgs[@]}): ${current_pkgs[*]}"
         else
             msg_info "No hay paquetes marcados para instalar aún."
+             msg_info "NOTA: Etiqueta (AUR): Para compilar con Paru o Yay | Etiqueta (Chaotic): Ya precompilados"
         fi
         echo
 
@@ -54,45 +58,125 @@ extras_sel() {
         cat_choice=$(gum choose --cursor "➔ " \
             "[01] Compiladores / Gestores de AUR" \
             "[02] Navegadores Web" \
-            "[03] Reproductores de Vídeo" \
-            "[04] Desarrollo y Programación" \
-            "[05] Ofimática y Lectores" \
-            "[06] Modelado 3D y Diseño" \
-            "[07] Utilidades del Sistema" \
-            "[08] 📥 INSTALAR PAQUETES SELECCIONADOS" \
-            "[09] ↩ VOLVER AL MENÚ PRINCIPAL")
+            "[03] Comunicación y Mensajería" \
+            "[04] Reproductores de Vídeo y Música" \
+            "[05] Desarrollo y Programación" \
+            "[06] Ofimática y Lectores" \
+            "[07] Modelado 3D y Diseño" \
+            "[08] Editores de Audio y Vídeo" \
+            "[09] ArtCraft AI Slop" \
+            "[10] Utilidades del Sistema" \
+            "[11] INSTALAR PAQUETES SELECCIONADOS" \
+            " ↩ VOLVER AL MENÚ PRINCIPAL")
 
         case "$cat_choice" in
             *"[01]"*)
-                # Depuración: Paquetes altamente populares y presentes en repos / Chaotic
                 _select_category_pkgs "Compiladores / Gestores de AUR" \
-                    "chaotic-mirrors" "paru" "yay"
+                    "chaotic-mirrors — Repositorio binario comunitario precompilado" \
+                    "paru — Ayudante de AUR veloz escrito en Rust" \
+                    "yay — Asistente de AUR clásico basado en pacman"
                 ;;
             *"[02]"*)
                 _select_category_pkgs "Navegadores Web" \
-                    "firefox" "chromium" "brave-bin" "google-chrome"
+                    "firefox — Navegador web libre y de código abierto" \
+                    "chromium — Navegador web de código abierto base para Chrome" \
+                    "brave-bin — (Chaotic) Navegador enfocado a la privacidad con bloqueo nativo" \
+                    "google-chrome — (Chaotic) Navegador web oficial de Google" \
+                    "microsoft-edge-stable-bin — (AUR) Navegador web oficial de Microsoft" \
+                    "midori-bin — (AUR) Navegador web ligero basado en Firefox" \
+                    "opera — (AUR) Navegador web oficial de Opera" \
+                    "opera-gx — Navegador web oficial de Opera para Gamers"
                 ;;
+
             *"[03]"*)
-                _select_category_pkgs "Reproductores de Vídeo" \
-                    "vlc" "mpv" "celluloid"
+                _select_category_pkgs "Comunicación y Mensajería" \
+                    "telegram-desktop — Aplicación oficial de Telegram" \
+                    "discord — Aplicación oficial de Discord" \
+                    "teams-for-linux — (Chaotic) Cliente no oficial de Microsoft Teams"
                 ;;
             *"[04]"*)
-                _select_category_pkgs "Desarrollo y Programación" \
-                    "git" "wget" "curl" "python" "go" "gcc" "cmake" "code" "visual-studio-code-bin" "sublime-text-4"
+                _select_category_pkgs "Reproductores de Vídeo" \
+                    "vlc — Reproductor multimedia universal todoterreno" \
+                    "mpv — Reproductor multimedia minimalista basado en MPlayer" \
+                    "celluloid — Interfaz gráfica elegante para MPV" \
+                    "audacious — Reproductor multimedia avanzado" \
+                    "tauon-music-box — Tu reproductor musical de otra galaxia" \
+                    "feishin — Reproductor moderno de música en local" \
+                    "spotify — (AUR) Un servicio de música por streaming privativo"
                 ;;
             *"[05]"*)
-                _select_category_pkgs "Ofimática y Lectores" \
-                    "libreoffice-fresh" "okular"
+                _select_category_pkgs "Desarrollo y Programación" \
+                    "git — Sistema de control de versiones distribuido" \
+                    "wget — Utilidad para descarga de archivos por red" \
+                    "curl — Herramienta de línea de comandos para transferir datos" \
+                    "python — Lenguaje de programación interpretado de alto nivel" \
+                    "go — Lenguaje de programación concurrente de Google" \
+                    "gcc — Compilador GNU para C y C++" \
+                    "cmake — Sistema cruzado de generadores de compilación" \
+                    "neovim — Editor de texto basado en Vim" \
+                    "code — Editor de código fuente, versión Open Source de VSCode" \
+                    "visual-studio-code-bin — (Chaotic) Editor de código fuente oficial de Microsoft" \
+                    "sublime-text-4 — (Chaotic) Editor de texto avanzado para código y marcado" \
+                    "antigravity — (AUR) IDE impulsado por agentes desarrollado por Google" \
+                    "lmstudio-bin — (AUR) Gestor de agentes y modelos para uso local" \
+                    "claude-code — (AUR)"
                 ;;
             *"[06]"*)
-                _select_category_pkgs "Modelado 3D y Diseño" \
-                    "blender" "gimp"
+                _select_category_pkgs "Ofimática y Lectores" \
+                    "libreoffice-fresh — Suite de oficina completa y actualizada" \
+                    "onlyoffice-bin — (Chaotic) Suite de oficina similar a MS Office" \
+                    "wps-office — (AUR) Suite de oficina de Kingsoft" \
+                    "okular — Visor de documentos universal de KDE"
                 ;;
             *"[07]"*)
-                _select_category_pkgs "Utilidades del Sistema" \
-                    "htop" "btop" "fastfetch" "unzip" "p7zip"
+                _select_category_pkgs "Modelado 3D y Diseño" \
+                    "blender — Suite de creación 3D completa" \
+                    "librecad — Edición comunitaria de QCad" \
+                    "gimp — Programa libre de edición de imágenes rasterizadas" \
+                    "pinta — Programa de dibujo libre con una estética similar a PaintdotNET"
                 ;;
             *"[08]"*)
+                _select_category_pkgs "Editores de Audio y Vídeo" \
+                    "audacity — Editor multipista de audio" \
+                    "kdenlive — Editor de vídeo desarrollado por KDE" \
+                    "davinci-resolve — (AUR) Editor de vídeo de grado profesional" 
+                ;;
+           *"[09]"*)
+                _select_category_pkgs "ArtCraft AI Slop" \ #Solo está aquí porque sé que muchos lo desean.
+                    "photocraft — (Chaotic) Photoshop vibecodeado, colorimetría errónea" \
+                    "filmcraft — (Chaotic) Premiere vibecodeado, mal tiempo de rendering" \
+                    "pdfcraft — (Chaotic) Editor y lector de PFDs vibecodeado, no esperes mucho más" \
+                    "effectcraft — (Chaotic) AfterEffects vibecodeado, sin buen timeline de animación" \
+                    "vectorcraft — (Chaotic) Illustrator vibecodeado, no entiende algunos vectores" \
+                    "lightcraft — (Chaotic) Lightroom vibecodeado, los filtros y colores funcionan mal" \
+                    "cadcraft — (Chaotic) AutoCAD vibecodeado, sin todas las implementaciones de escala" \
+                    "wordcraft — (Chaotic) Word vibecodeado, sin citas o estilos" \
+                    "gridcraft — (Chaotic) Excel vibecodeado, sin macros y bases de datos" \
+                    "deckcraft — (Chaotic) PowerPoint vibecodeado, no esperes gran cosa" \
+                    "soundcraft — (Chaotic) Avid Pro Tools vibecodeado, Open Source del mismo" 
+                    
+                ;; 
+            *"[10]"*)
+                _select_category_pkgs "Utilidades del Sistema" \
+                    "htop — Monitor interactivo de procesos en terminal" \
+                    "btop — Monitor de recursos moderno y visual en terminal" \
+                    "fastfetch — Información del sistema rápida y personalizable" \
+                    "unzip — Utilidad para descompresión de archivos ZIP" \
+                    "p7zip — Compresor de archivos de alta tasa con soporte 7z"
+                ;;
+            *"[11]"*)
+                msg_info "Estos paquetes necesitan de una versión estable del kernel para no romper dependencias con DKMS" \
+                _select_category_pkgs "Virtualización y Contenedores" \
+                    "docker — Adminstrador de aplicaciones en contenedores" \
+                    "docker-desktop — (AUR) Interfaz gráfica de Docker (recomendado instalar junto a docker)" \
+                    "kubeadm — Orquestador de contenedores para gestión de aplicaciones (recomendado instalar junto a kubelet)" \
+                    "kubelet — Agente de automatización de nodos (recomendado instalar junto a kubeadm)" \
+                    "qemu-full — Hipervisor (cliente) de alta fidelidad (recomendado usar junto a Virt Manager)" \
+                    "virt-manager — Hipervisor gráfico que usa KVM (recomendado usar junto a QEMU)" \
+                    "vmware-workstation — (AUR) Hipervisor gráfico de Broadcom (recomendado instalar linux firmware según tu kernel)" \
+                    "virtualbox — Hipervisor gráfico de Oracle (recomendado instalar virtualbox host dkms para mejor integración)"
+                ;;
+            *"[12]"*)
                 local pkgs_to_install=("${!SELECTED_EXTRA_PKGS_MAP[@]}")
                 if [ ${#pkgs_to_install[@]} -eq 0 ]; then
                     msg_error "No has marcado ningún paquete para instalar."
