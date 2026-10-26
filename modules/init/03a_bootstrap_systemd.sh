@@ -9,15 +9,21 @@ run_bootstrap_systemd() {
     # 1. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
     local kernel_choice
-    kernel_choice=$(gum choose "linux (Mainline)" "linux-lts (Soporte extendido)" "linux-zen (Optimizado para Escritorio/Gaming)")
+    kernel_choice=$(gum choose "linux (Mainline)" "linux-lts (Soporte extendido)" "linux-rt (Tiempo real)" "linux-zen (Optimizado para Escritorio/Gaming)" "linux-custom [WIP] (Compilación en base a tu PC)")
 
     local kernel_pkg="linux"
     case "$kernel_choice" in
         "linux-lts (Soporte extendido)")
             kernel_pkg="linux-lts"
             ;;
+        "linux-rt (Tiempo Real)")
+            kernel_pkg="linux-rt"
+            ;;
         "linux-zen (Optimizado para Escritorio/Gaming)")
             kernel_pkg="linux-zen"
+            ;;
+        "linux-custom [WIP] (Compilación en base a tu PC)")
+            custom_kernel=true
             ;;
     esac
 
