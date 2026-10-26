@@ -62,8 +62,8 @@ EOF
         base_kernel_pkg="" # Se compilará dentro del entorno o chroot
     fi
 
-    # Paquetes base para Artix con OpenRC (incluyendo artix-keyring)
-    local artix_pkgs="base base-devel artix-keyring artix-archlinux-support openrc openrc-system w3m htop fastfetch $ucode_pkg $kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
+    # Paquetes base para Artix con OpenRC (usando $base_kernel_pkg)
+    local artix_pkgs="base base-devel artix-keyring artix-archlinux-support openrc openrc-system w3m htop fastfetch $ucode_pkg $base_kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
 
     # 4. Instalación directa sobre /mnt
     echo ""
@@ -74,24 +74,23 @@ EOF
     
     if pacman -Sy --config /tmp/pacman-artix.conf --root /mnt --dbpath /mnt/var/lib/pacman --cachedir /mnt/var/cache/pacman/pkg $artix_pkgs; then
 
-    # Si se seleccionó kernel personalizado, preparar entorno de compilación
+        # Si se seleccionó kernel personalizado, preparar entorno de compilación
         if [ "$custom_kernel" = true ]; then
             msg_info "Preparando entorno para la compilación del Kernel personalizado..."
             
-            # Aquí se pueden montar los sistemas de archivos virtuales y lanzar el script de compilación chroot
             cat << 'EOF' > /mnt/tmp/build_kernel.sh
-            #!/usr/bin/env bash
-            echo "Iniciando configuración y compilación del kernel personalizado a medida..."
-            
-            # Dependencias de compilación
-            pacman -S --noconfirm git bc cpio perl libelf pahole kmod make gcc bison flex
-            # Clonar o configurar fuentes del kernel para compilar con make menuconfig
-            EOF
+#!/usr/bin/env bash
+echo "Iniciando configuración y compilación del kernel personalizado a medida..."
+
+# Dependencias de compilación
+pacman -S --noconfirm git bc cpio perl libelf pahole kmod make gcc bison flex
+# Clonar o configurar fuentes del kernel para compilar con make menuconfig
+EOF
             chmod +x /mnt/tmp/build_kernel.sh
             arch-chroot /mnt /tmp/build_kernel.sh
         fi
         
-       # 5. Generación del FSTAB
+        # 5. Generación del FSTAB
         msg_info "Generando archivo fstab..."
         genfstab -U /mnt >> /mnt/etc/fstab
         echo "openrc" > /tmp/pandamonium_init
