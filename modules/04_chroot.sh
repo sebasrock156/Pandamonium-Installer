@@ -140,6 +140,20 @@ EOF
         $chroot_cmd /mnt mkinitcpio -P
     fi
 
+    # --- 4.5. CONFIGURACIÓN DE SEGURIDAD (AppArmor / SELinux) ---
+    if [ -f "modules/init/04b_security.sh" ]; then
+        source modules/init/04b_security.sh
+        run_security_config
+    else
+        msg_warn "Módulo modules/init/04b_security.sh no encontrado, omitiendo capa MAC..."
+    fi
+
+    # Leer parámetros LSM generados (si los hay) para pasarlos al bootloader
+    local lsm_params=""
+    if [ -f /tmp/pandamonium_lsm_param ]; then
+        lsm_params=$(cat /tmp/pandamonium_lsm_param)
+    fi
+
     # 5. Selección e Instalación del Bootloader (Incluyendo EFISTUB)
     show_header
     msg_info "Configuración del Gestor de Arranque (Bootloader)"
@@ -171,8 +185,17 @@ EOF
                 $chroot_cmd /mnt grub-install --target=i386-pc "$target_disk_boot"
             fi
 
+            # Inyectar parámetros de ZFS y/o seguridad en GRUB
+            local grub_extra=""
             if [ "$use_zfs" = true ]; then
-                sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="zfs=zroot/ROOT/default /' /mnt/etc/default/grub 2>/dev/null || true
+                grub_extra="zfs=zroot/ROOT/default "
+            fi
+            if [ -n "$lsm_params" ]; then
+                grub_extra+="$lsm_params "
+            fi
+
+            if [ -n "$grub_extra" ]; then
+                sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"$grub_extra/" /mnt/etc/default/grub 2>/dev/null || true
             fi
 
             $chroot_cmd /mnt grub-mkconfig -o /boot/grub/grub.cfg
@@ -189,24 +212,25 @@ timeout 4
 editor 0
 EOF
 
+            local systemd_options="rw"
             if [ "$use_zfs" = true ]; then
-                cat << 'EOF' > /mnt/boot/loader/entries/arch.conf
-title   Arch Linux (Pandamonium ZFS)
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options zfs=zroot/ROOT/default rw
-EOF
+                systemd_options="zfs=zroot/ROOT/default $systemd_options"
             else
                 local root_uuid
                 root_uuid=$(findmnt -no UUID /mnt)
+                systemd_options="root=UUID=$root_uuid $systemd_options"
+            fi
 
-                cat << EOF > /mnt/boot/loader/entries/arch.conf
+            if [ -n "$lsm_params" ]; then
+                systemd_options="$lsm_params $systemd_options"
+            fi
+
+            cat << EOF > /mnt/boot/loader/entries/arch.conf
 title   Arch Linux (Pandamonium)
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
-options root=UUID=$root_uuid rw
+options $systemd_options
 EOF
-            fi
             msg_success "systemd-boot configurado correctamente."
             ;;
 
@@ -225,13 +249,17 @@ EOF
                 part_num=$(lsblk -no partn "$efi_device" | head -n 1)
 
                 if [ -n "$disk_name" ] && [ -n "$part_num" ]; then
-                    local kernel_params=""
+                    local kernel_params="rw"
                     if [ "$use_zfs" = true ]; then
-                        kernel_params="zfs=zroot/ROOT/default rw"
+                        kernel_params="zfs=zroot/ROOT/default $kernel_params"
                     else
                         local root_uuid
                         root_uuid=$(findmnt -no UUID /mnt)
-                        kernel_params="root=UUID=$root_uuid rw"
+                        kernel_params="root=UUID=$root_uuid $kernel_params"
+                    fi
+
+                    if [ -n "$lsm_params" ]; then
+                        kernel_params="$lsm_params $kernel_params"
                     fi
 
                     $chroot_cmd /mnt efibootmgr --create \
