@@ -6,6 +6,12 @@ run_bootstrap_openrc() {
     show_header
     msg_info "Modo Bootstrap: OpenRC (ArchLinux => Artix Linux)"
 
+    # Detectar si el usuario seleccionó ZFS en el paso de discos anterior
+    local use_zfs=false
+    if zpool list zroot &>/dev/null || grep -q "zfs" /proc/filesystems || [ -d "/mnt/.zfs" ]; then
+        use_zfs=true
+    fi
+
     # 1. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
     local kernel_choice
@@ -37,10 +43,20 @@ run_bootstrap_openrc() {
         msg_success "-> Procesador AMD detectado: Se instalará amd-ucode."
     fi
 
-    # 3. Inyección del pacman.conf de Artix (SigLevel permisivo para la inyección inicial)
+    # 3. Inyección del pacman.conf de Artix (Añadiendo ArchZFS si procede)
     gum spin --spinner dot --title "Inyectando repositorios de Artix Linux" -- sleep 2
 
-    cat << 'EOF' > /tmp/pacman-artix.conf
+    local archzfs_repo_block=""
+    if [ "$use_zfs" = true ]; then
+        archzfs_repo_block="
+[archzfs]
+Server = https://archzfs.com/\$repo/\$arch
+Server = https://mirror.sum7.eu/archlinux/archzfs/\$repo/\$arch
+Server = https://zxcv.icu/archzfs/\$repo/\$arch
+"
+    fi
+
+    cat << EOF > /tmp/pacman-artix.conf
 [options]
 HoldPkg     = pacman glibc
 Architecture = auto
@@ -49,21 +65,38 @@ SigLevel    = Optional TrustAll
 LocalFileSigLevel = Optional
 
 [system]
-Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
+Server = https://mirror1.artixlinux.org/repos/\$repo/os/\$arch
 [world]
-Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
+Server = https://mirror1.artixlinux.org/repos/\$repo/os/\$arch
 [galaxy]
-Server = https://mirror1.artixlinux.org/repos/$repo/os/$arch
+Server = https://mirror1.artixlinux.org/repos/\$repo/os/\$arch
+$archzfs_repo_block
 EOF
 
-    # Paquetes base para Artix con OpenRC (si es custom kernel, omitimos el paquete precompilado genérico)
+    # Configuración de paquetes ZFS condicionales para OpenRC
+    local zfs_pkgs=""
+    if [ "$use_zfs" = true ]; then
+        if [ "$custom_kernel" = false ]; then
+            zfs_pkgs="zfs-utils zfs-openrc zfs-$kernel_pkg"
+        else
+            zfs_pkgs="zfs-utils zfs-openrc zfs-dkms dkms"
+        fi
+    fi
+
+    # Paquetes base para Artix con OpenRC
     local base_kernel_pkg="$kernel_pkg"
     if [ "$custom_kernel" = true ]; then
         base_kernel_pkg="" # Se compilará dentro del entorno o chroot
     fi
 
-    # Paquetes base para Artix con OpenRC (usando $base_kernel_pkg)
-    local artix_pkgs="base base-devel artix-keyring artix-archlinux-support openrc openrc-system w3m htop fastfetch $ucode_pkg $base_kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano"
+    local artix_pkgs="base base-devel artix-keyring artix-archlinux-support openrc openrc-system w3m htop fastfetch $ucode_pkg $base_kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog nano $zfs_pkgs"
+
+    # Configurar claves de ArchZFS en el host temporal si se usa ZFS
+    if [ "$use_zfs" = true ]; then
+        msg_info "Configurando llaves del repositorio ArchZFS..."
+        pacman-key --recv-key F757749674FA9DAC --keyserver keyserver.ubuntu.com || true
+        pacman-key --lsign-key F757749674FA9DAC || true
+    fi
 
     # 4. Instalación directa sobre /mnt
     echo ""
@@ -90,12 +123,25 @@ EOF
             arch-chroot /mnt /tmp/build_kernel.sh
         fi
         
-        # 5. Generación del FSTAB
-        msg_info "Generando archivo fstab..."
-        genfstab -U /mnt >> /mnt/etc/fstab
+        # 5. Generación del FSTAB o servicios ZFS con OpenRC
+        if [ "$use_zfs" = true ]; then
+            msg_info "Generando zpool.cache y configurando servicios OpenRC para ZFS..."
+            mkdir -p /mnt/etc/zfs
+            zpool export zroot 2>/dev/null || true
+            zpool import -d /dev/disk/by-id -R /mnt zroot
+            cp /etc/zfs/zpool.cache /mnt/etc/zfs/zpool.cache 2>/dev/null || zpool set cachefile=/etc/zfs/zpool.cache zroot
+            
+            # Habilitar servicios ZFS nativos en OpenRC
+            arch-chroot /mnt rc-update add zfs-import boot
+            arch-chroot /mnt rc-update add zfs-mount boot
+        else
+            msg_info "Generando archivo fstab..."
+            genfstab -U /mnt >> /mnt/etc/fstab
+        fi
+
         echo "openrc" > /tmp/pandamonium_init
         
-        msg_success "¡Bootstrap de OpenRC e inyección de Artix completados con éxito!"
+        msg_success "¡Bootstrap de OpenRC y almacenamiento configurados con éxito!"
     else
         msg_error "Error al instalar los paquetes de Artix en /mnt."
     fi
