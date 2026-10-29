@@ -6,6 +6,12 @@ run_bootstrap_systemd() {
     show_header
     msg_info "Modo Bootstrap: Systemd (Arch Linux)"
 
+    # Detectar si el usuario seleccionó ZFS en el paso de discos anterior
+    local use_zfs=false
+    if zpool list zroot &>/dev/null || grep -q "zfs" /proc/filesystems || [ -d "/mnt/.zfs" ]; then
+        use_zfs=true
+    fi
+
     # 1. Selección de Kernel
     msg_info "Selecciona la variante del Kernel:"
     local kernel_choice
@@ -46,10 +52,38 @@ run_bootstrap_systemd() {
         base_kernel_pkg=""
     fi
 
-    # 3. Paquetes esenciales para Systemd
-    local essential_pkgs="base base-devel nano htop fastfetch w3m $ucode_pkg $base_kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog systemd systemd-sysvcompat"
+    # 3. Paquetes esenciales para Systemd (ZFS solo si se requiere)
+    local zfs_pkgs=""
+    if [ "$use_zfs" = true ]; then
+        if [ "$custom_kernel" = false ]; then
+            zfs_pkgs="zfs-utils zfs-$kernel_pkg"
+        else
+            zfs_pkgs="zfs-utils zfs-dkms dkms"
+        fi
+    fi
 
-    # 4. Instalación vía pacstrap
+    local essential_pkgs="base base-devel nano htop fastfetch w3m $ucode_pkg $base_kernel_pkg linux-firmware networkmanager wireless_tools wpa_supplicant dialog systemd systemd-sysvcompat $zfs_pkgs"
+
+    # 4. Configurar repositorio ArchZFS ÚNICAMENTE si se usa ZFS
+    if [ "$use_zfs" = true ]; then
+        msg_info "Configurando repositorio ArchZFS para la instalación..."
+        pacman-key --recv-key F757749674FA9DAC --keyserver keyserver.ubuntu.com || true
+        pacman-key --lsign-key F757749674FA9DAC || true
+        
+        local pacman_conf="/etc/pacman.conf"
+        if ! grep -q "\[archzfs\]" "$pacman_conf"; then
+            cat << 'EOF' >> "$pacman_conf"
+
+[archzfs]
+Server = https://archzfs.com/$repo/$arch
+Server = https://mirror.sum7.eu/archlinux/archzfs/$repo/$arch
+Server = https://zxcv.icu/archzfs/$repo/$arch
+EOF
+            pacman -Sy
+        fi
+    fi
+
+    # 5. Instalación vía pacstrap
     msg_info "Iniciando instalación mediante pacstrap (Systemd)..."
     echo ""
     if pacstrap /mnt $essential_pkgs; then
@@ -70,11 +104,22 @@ EOF
             arch-chroot /mnt /tmp/build_kernel.sh
         fi
 
-        # 5. Generación del FSTAB
-        msg_info "Generando archivo fstab..."
-        genfstab -U /mnt >> /mnt/etc/fstab
+        # 6. Generación del FSTAB o Caché/Servicios ZFS
+        if [ "$use_zfs" = true ]; then
+            msg_info "Generando zpool.cache y configurando servicios ZFS..."
+            mkdir -p /mnt/etc/zfs
+            zpool export zroot 2>/dev/null || true
+            zpool import -d /dev/disk/by-id -R /mnt zroot
+            cp /etc/zfs/zpool.cache /mnt/etc/zfs/zpool.cache 2>/dev/null || zpool set cachefile=/etc/zfs/zpool.cache zroot
+            
+            arch-chroot /mnt systemctl enable zfs.target zfs-import-scan.service zfs-mount.service zfs-share.service
+        else
+            msg_info "Generando archivo fstab..."
+            genfstab -U /mnt >> /mnt/etc/fstab
+        fi
+
         echo "systemd" > /tmp/pandamonium_init
-        msg_success "¡Bootstrap (Systemd) y fstab generados correctamente!"
+        msg_success "¡Bootstrap (Systemd) y almacenamiento configurados correctamente!"
     else
         msg_error "Error al ejecutar pacstrap."
     fi
