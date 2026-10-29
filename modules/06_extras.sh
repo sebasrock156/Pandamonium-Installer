@@ -18,12 +18,10 @@ _select_category_pkgs() {
     echo
 
     local choices
-    # gum choose devuelve las líneas completas seleccionadas
     mapfile -t choices < <(gum choose --no-limit --cursor "➔ " "${available_pkgs[@]}")
 
     if [ ${#choices[@]} -gt 0 ]; then
         for item in "${choices[@]}"; do
-            # Extraer únicamente el nombre técnico del paquete (lo que está antes del separador " — ")
             local pkg
             pkg=$(echo "$item" | awk -F ' — ' '{print $1}' | xargs)
             if [ -n "$pkg" ]; then
@@ -65,7 +63,7 @@ extras_sel() {
             "[07] Modelado 3D y Diseño" \
             "[08] Editores de Audio y Vídeo" \
             "[09] ArtCraft AI Slop" \
-            "[10] Utilidades del Sistema" \
+            "[10] Utilidades del Sistema y Backups" \
             "[11] Virtualización y Contenedores" \
             "[12] INSTALAR PAQUETES SELECCIONADOS" \
             "[13] ↩ VOLVER AL MENÚ PRINCIPAL")
@@ -142,7 +140,6 @@ extras_sel() {
                     "davinci-resolve — (AUR) Editor de vídeo de grado profesional"
                 ;;
             *"[09]"*)
-                # Solo está aquí porque sé que muchos lo desean.
                 _select_category_pkgs "ArtCraft AI Slop" \
                     "photocraft — (Chaotic) Photoshop vibecodeado, colorimetría errónea" \
                     "filmcraft — (Chaotic) Premiere vibecodeado, mal tiempo de rendering" \
@@ -157,12 +154,13 @@ extras_sel() {
                     "soundcraft — (Chaotic) Avid Pro Tools vibecodeado"
                 ;;
             *"[10]"*)
-                _select_category_pkgs "Utilidades del Sistema" \
+                _select_category_pkgs "Utilidades del Sistema y Backups" \
                     "htop — Monitor interactivo de procesos en terminal" \
                     "btop — Monitor de recursos moderno y visual en terminal" \
                     "fastfetch — Información del sistema rápida y personalizable" \
                     "unzip — Utilidad para descompresión de archivos ZIP" \
-                    "p7zip — Compresor de archivos de alta tasa con soporte 7z"
+                    "p7zip — Compresor de archivos de alta tasa con soporte 7z" \
+                    "timeshift — Herramienta de restauración y copias de seguridad del sistema (Btrfs/Rsync)"
                 ;;
             *"[11]"*)
                 msg_info "Nota: Virtualización requiere kernel estable para evitar incompatibilidades DKMS."
@@ -183,7 +181,6 @@ extras_sel() {
                     msg_error "No has marcado ningún paquete para instalar."
                     sleep 2
                 else
-                    # Detección y Sugerencia de Chaotic-AUR
                     local has_chaotic=false
                     for pkg in "${pkgs_to_install[@]}"; do
                         if [ "$pkg" == "chaotic-mirrors" ]; then
