@@ -26,14 +26,6 @@ setup_disks_and_mounts() {
 
     msg_info "Has seleccionado la unidad: $target_disk"
 
-    # Elección del Sistema de Archivos para la Raíz (¡Incluyendo ZFS!)
-    msg_info "Selecciona el sistema de archivos para la Raíz (/):"
-    local fs_root
-    fs_root=$(gum choose "ext4" "btrfs" "xfs" "f2fs" "zfs")
-
-    local use_zfs=false
-    [ "$fs_root" == "zfs" ] && use_zfs=true
-
     if ! confirm_action "¿Deseas abrir cfdisk para particionar $target_disk?"; then
         msg_info "Particionado cancelado. Volviendo a intentar..."
         sleep 1
@@ -41,11 +33,11 @@ setup_disks_and_mounts() {
         return
     fi
 
-    # Lanzar cfdisk interactivo
+    # Lanzar cfdisk interactivo primero
     clear
     cfdisk "$target_disk"
 
-    # 2. Selección de particiones creadas
+    # 2. Selección de particiones creadas tras el particionado
     show_header
     msg_info "Asignación de particiones"
 
@@ -89,6 +81,14 @@ setup_disks_and_mounts() {
         return
     fi
 
+    # Ahora sí, elegimos el Sistema de Archivos para la Raíz sabiendo qué partición se usará
+    msg_info "Selecciona el sistema de archivos para la Raíz (/):"
+    local fs_root
+    fs_root=$(gum choose "ext4" "btrfs" "xfs" "f2fs" "zfs")
+
+    local use_zfs=false
+    [ "$fs_root" == "zfs" ] && use_zfs=true
+
     # Control de /home convencional
     local home_part=""
     local fs_home=""
@@ -118,7 +118,7 @@ setup_disks_and_mounts() {
             fi
         fi
     else
-        msg_info "ZFS seleccionado: /home se gestionará mediante datasets internos del zpool."
+        msg_info "ZFS seleccionado: /home y los datasets se gestionarán mediante zroot."
     fi
 
     # 3. Confirmar formateo
@@ -126,7 +126,7 @@ setup_disks_and_mounts() {
     show_header
     msg_info "¡ATENCIÓN! Se van a formatear/inicializar las particiones seleccionadas."
     echo " - Raíz (/): $root_part [Formato: $fs_root]"
-    [ "$is_uefi" = true ] && echo " - EFI (/boot/EFI): $boot_part [Formato: FAT32]"
+    [ "$is_uefi" = true ] && echo " - EFI (/boot): $boot_part [Formato: FAT32]"
     [ "$use_separate_home" = true ] && echo " - Home (/home): $home_part [Formato: $fs_home]"
 
     if ! confirm_action "¿Estás totalmente seguro de proceder con la operación?"; then
@@ -135,25 +135,29 @@ setup_disks_and_mounts() {
     fi
 
     # 4. Formateo y Montajes
-    if [ "$is_uefi" = true ]; then
-        msg_info "Formateando partición EFI (FAT32)..."
-        mkfs.vfat -F32 "$boot_part"
-    fi
-
     if [ "$use_zfs" = true ]; then
         msg_info "Configurando ZFS Pool y Datasets..."
-        # Asegurar que las herramientas de zfs estén disponibles
         modprobe zfs 2>/dev/null || true
-        
-        # Crear zpool temporal en /mnt para la raíz (zroot)
+
+        # Desmontar zroot previo si estuviera activo por seguridad
+        zpool export zroot 2>/dev/null || true
+
+        # Crear zpool principal
         zpool create -f -o ashift=12 -O normalization=formD \
-             -O mountpoint=/ -R /mnt zroot "$root_part"
-             
-        # Crear dataset para root y home
+             -O acltype=posixacl -O xattr=sa -O dnodesize=auto \
+             -O encryption=off -O keyformat=passphrase \
+             -O mountpoint=none -R /mnt zroot "$root_part"
+
+        # Crear estructura de datasets recomendada para Arch
         zfs create -o mountpoint=none zroot/data
         zfs create -o mountpoint=/home zroot/data/home
-        zfs create -o mountpoint=/ zroot/ROOT
-        
+
+        zfs create -o mountpoint=none zroot/ROOT
+        zfs create -o mountpoint=/ zroot/ROOT/default
+
+        # Fijar el bootfs por defecto
+        zpool set bootfs=zroot/ROOT/default zroot
+
         msg_success "¡ZFS Pool 'zroot' creado y datasets montados correctamente!"
     else
         msg_info "Formateando partición Raíz ($fs_root)..."
@@ -168,14 +172,15 @@ setup_disks_and_mounts() {
         mount "$root_part" /mnt
     fi
 
-    # Montaje persistente del EFI para UEFI (las particiones ESP tienen una condición de desmontaje cuando están desde el liveCD)
+    # Montaje persistente del EFI en /mnt/boot (vital para GRUB y systemd-boot)
     if [ "$is_uefi" = true ]; then
-        msg_info "Creando directorio /mnt/boot/EFI y montando partición..."
-        mkdir -p /mnt/boot/EFI
-        mount "$boot_part" /mnt/boot/EFI
+        msg_info "Formateando y montando partición EFI en /mnt/boot..."
+        mkfs.vfat -F32 "$boot_part"
+        mkdir -p /mnt/boot
+        mount "$boot_part" /mnt/boot
     fi
 
-    # Montaje de /home (si está disponible)
+    # Montaje de /home (si está seleccionado de forma independiente sin ZFS)
     if [ "$use_separate_home" = true ]; then
         msg_info "Formateando partición /home ($fs_home)..."
         case "$fs_home" in
@@ -183,7 +188,7 @@ setup_disks_and_mounts() {
             btrfs) mkfs.btrfs -f "$home_part" ;;
             xfs) mkfs.xfs -f "$home_part" ;;
             f2fs) mkfs.f2fs -f "$home_part" ;;
-        es]
+        esac
         mkdir -p /mnt/home
         mount "$home_part" /mnt/home
     fi
