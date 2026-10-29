@@ -128,10 +128,7 @@ EOF
             fi
         done
 
-        # Asignar la contraseña de forma segura con chpasswd
         echo "$username:$user_pass" | $chroot_cmd /mnt chpasswd
-
-        # Habilitar sudo para el grupo wheel
         $chroot_cmd /mnt sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
         msg_success "Usuario $username creado y configurado con privilegios de sudo."
     fi
@@ -143,23 +140,15 @@ EOF
         $chroot_cmd /mnt mkinitcpio -P
     fi
 
-    # 5. Selección e Instalación del Bootloader
+    # 5. Selección e Instalación del Bootloader (Incluyendo EFISTUB)
     show_header
     msg_info "Configuración del Gestor de Arranque (Bootloader)"
 
     local bootloader_choice
     if [ -d /sys/firmware/efi/efivars ]; then
-        if [ "$init_system" = "openrc" ]; then
-            msg_info "Entorno OpenRC detectado: Forzando GRUB (compatible con OpenRC y ZFS)."
-            bootloader_choice="GRUB (Universal y flexible)"
-        else
-            if [ "$use_zfs" = true ]; then
-                msg_info "Entorno ZFS detectado: Se recomienda GRUB por su compatibilidad robusta con zpools."
-            fi
-            bootloader_choice=$(gum choose "GRUB (Universal y flexible)" "systemd-boot (Nativo UEFI, ligero)")
-        fi
+        bootloader_choice=$(gum choose "GRUB (Universal y flexible)" "systemd-boot (Nativo UEFI, ligero)" "EFISTUB (Arranque UEFI directo)")
     else
-        msg_info "Modo BIOS/Legacy detectado. systemd-boot no está disponible."
+        msg_info "Modo BIOS/Legacy detectado. Solo GRUB está disponible."
         bootloader_choice="GRUB (Universal y flexible)"
         sleep 1
     fi
@@ -219,6 +208,56 @@ options root=UUID=$root_uuid rw
 EOF
             fi
             msg_success "systemd-boot configurado correctamente."
+            ;;
+
+        "EFISTUB (Arranque UEFI directo)")
+            msg_info "Configurando EFISTUB mediante efibootmgr..."
+            $chroot_cmd /mnt pacman -S --noconfirm efibootmgr
+
+            # Necesitamos asegurar que el kernel esté en la partición EFI si se usa EFISTUB puro
+            # (En muchas isos /boot es la partición EFI montada, asviaremos que /boot es ESP)
+            
+            local esp_part=""
+            # Detectar partición EFI montada en /mnt/boot o /mnt/boot/EFI
+            local efi_device
+            efi_device=$(findmnt -n -o SOURCE /mnt/boot 2>/dev/null || findmnt -n -o SOURCE /mnt/boot/EFI 2>/dev/null)
+            
+            # Obtener número de partición y disco base para efibootmgr (--disk y --part)
+            # Ejemplo simplificado extrayendo el disco y partición
+            if [ -n "$efi_device" ]; then
+                local disk_part_info
+                disk_part_info=$(lsblk -no PKNAME,PARTNO "$efi_device" 2>/dev/null | head -n 1)
+                # O extraer de forma robusta con lsblk
+                local disk_name
+                disk_name=$(lsblk -no pkname "$efi_device" | head -n 1)
+                local part_num
+                part_num=$(lsblk -no partn "$efi_device" | head -n 1)
+
+                if [ -n "$disk_name" ] && [ -n "$part_num" ]; then
+                    local kernel_params=""
+                    if [ "$use_zfs" = true ]; then
+                        kernel_params="zfs=zroot/ROOT/default rw"
+                    else
+                        local root_uuid
+                        root_uuid=$(findmnt -no UUID /mnt)
+                        kernel_params="root=UUID=$root_uuid rw"
+                    fi
+
+                    # Registrar en la NVRAM con efibootmgr
+                    $chroot_cmd /mnt efibootmgr --create \
+                        --disk "/dev/$disk_name" \
+                        --part "$part_num" \
+                        --label "Arch Linux (Pandamonium EFISTUB)" \
+                        --loader /vmlinuz-linux \
+                        --unicode "initrd=\\initramfs-linux.img $kernel_params"
+                    
+                    msg_success "¡Entrada EFISTUB registrada directamente en la placa base con éxito!"
+                else
+                    msg_error "No se pudo determinar el disco o partición EFI para EFISTUB. Cayendo en modo seguro."
+                fi
+            else
+                msg_error "No se encontró la partición EFI montada en /boot para configurar EFISTUB."
+            fi
             ;;
     esac
 }
