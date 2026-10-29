@@ -160,6 +160,10 @@ setup_disks_and_mounts() {
 
         msg_success "¡ZFS Pool 'zroot' creado y datasets montados correctamente!"
     else
+        # --- AQUÍ: Limpiamos restos de sistemas de archivos previos en la raíz ---
+        msg_info "Limpiando firmas previas en la partición raíz..."
+        wipefs -a "$root_part" 2>/dev/null || true
+
         msg_info "Formateando partición Raíz ($fs_root)..."
         case "$fs_root" in
             ext4) mkfs.ext4 -F "$root_part" ;;
@@ -175,6 +179,7 @@ setup_disks_and_mounts() {
     # Montaje persistente del EFI en /mnt/boot (vital para GRUB y systemd-boot)
     if [ "$is_uefi" = true ]; then
         msg_info "Formateando y montando partición EFI en /mnt/boot..."
+        wipefs -a "$boot_part" 2>/dev/null || true
         mkfs.vfat -F32 "$boot_part"
         mkdir -p /mnt/boot
         mount "$boot_part" /mnt/boot
@@ -182,6 +187,10 @@ setup_disks_and_mounts() {
 
     # Montaje de /home (si está seleccionado de forma independiente sin ZFS)
     if [ "$use_separate_home" = true ]; then
+        # --- AQUÍ: Limpiamos restos de sistemas de archivos previos en /home ---
+        msg_info "Limpiando firmas previas en la partición /home..."
+        wipefs -a "$home_part" 2>/dev/null || true
+
         msg_info "Formateando partición /home ($fs_home)..."
         case "$fs_home" in
             ext4) mkfs.ext4 -F "$home_part" ;;
