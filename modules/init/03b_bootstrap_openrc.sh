@@ -12,10 +12,10 @@ run_bootstrap_openrc() {
         use_zfs=true
     fi
 
-    # 1. Selección de Kernel
+    # 1. Selección de Kernel (Omitiendo LTS y Hardened que dan problemas en Artix con vmlinuz)
     msg_info "Selecciona la variante del Kernel:"
     local kernel_choice
-    kernel_choice=$(gum choose "linux (Mainline)" "linux-rt (Tiempo real)" "linux-zen (Para gaming)" "linux-custom (Compilación propia)")
+    kernel_choice=$(gum choose "linux (Mainline)" "linux-rt (Tiempo real)" "linux-zen (Optimizado para Escritorio/Gaming)" "linux-custom (Compilación propia)")
 
     local kernel_pkg="linux"
     local custom_kernel=false
@@ -24,7 +24,7 @@ run_bootstrap_openrc() {
         "linux-rt (Tiempo real)")
             kernel_pkg="linux-rt"
             ;;
-        "linux-zen (Para gaming)")
+        "linux-zen (Optimizado para Escritorio/Gaming)")
             kernel_pkg="linux-zen"
             ;;
         "linux-custom (Compilación propia)")
