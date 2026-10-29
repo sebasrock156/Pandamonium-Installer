@@ -214,20 +214,11 @@ EOF
             msg_info "Configurando EFISTUB mediante efibootmgr..."
             $chroot_cmd /mnt pacman -S --noconfirm efibootmgr
 
-            # Necesitamos asegurar que el kernel esté en la partición EFI si se usa EFISTUB puro
-            # (En muchas isos /boot es la partición EFI montada, asviaremos que /boot es ESP)
-            
             local esp_part=""
-            # Detectar partición EFI montada en /mnt/boot o /mnt/boot/EFI
             local efi_device
             efi_device=$(findmnt -n -o SOURCE /mnt/boot 2>/dev/null || findmnt -n -o SOURCE /mnt/boot/EFI 2>/dev/null)
             
-            # Obtener número de partición y disco base para efibootmgr (--disk y --part)
-            # Ejemplo simplificado extrayendo el disco y partición
             if [ -n "$efi_device" ]; then
-                local disk_part_info
-                disk_part_info=$(lsblk -no PKNAME,PARTNO "$efi_device" 2>/dev/null | head -n 1)
-                # O extraer de forma robusta con lsblk
                 local disk_name
                 disk_name=$(lsblk -no pkname "$efi_device" | head -n 1)
                 local part_num
@@ -243,7 +234,6 @@ EOF
                         kernel_params="root=UUID=$root_uuid rw"
                     fi
 
-                    # Registrar en la NVRAM con efibootmgr
                     $chroot_cmd /mnt efibootmgr --create \
                         --disk "/dev/$disk_name" \
                         --part "$part_num" \
@@ -253,11 +243,24 @@ EOF
                     
                     msg_success "¡Entrada EFISTUB registrada directamente en la placa base con éxito!"
                 else
-                    msg_error "No se pudo determinar el disco o partición EFI para EFISTUB. Cayendo en modo seguro."
+                    msg_error "No se pudo determinar el disco o partición EFI para EFISTUB."
                 fi
             else
                 msg_error "No se encontró la partición EFI montada en /boot para configurar EFISTUB."
             fi
             ;;
     esac
+
+    # --- 6. CONFIGURACIÓN DE ZRAM UNIVERSAL (ZFS-aware) ---
+    show_header
+    msg_info "Configurando ZRAM universal e inteligente..."
+    if [ -f "modules/init/04a_zram_setup.sh" ]; then
+        cp modules/init/04a_zram_setup.sh /mnt/tmp/zram_setup.sh
+        chmod +x /mnt/tmp/zram_setup.sh
+        $chroot_cmd /mnt /tmp/zram_setup.sh
+        rm -f /mnt/tmp/zram_setup.sh
+        msg_success "¡ZRAM configurado y persistido correctamente para $init_system!"
+    else
+        msg_error "No se encontró el módulo modules/init/04a_zram_setup.sh"
+    fi
 }
