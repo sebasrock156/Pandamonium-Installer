@@ -160,7 +160,7 @@ setup_disks_and_mounts() {
 
         msg_success "¡ZFS Pool 'zroot' creado y datasets montados correctamente!"
     else
-        # --- AQUÍ: Limpiamos restos de sistemas de archivos previos en la raíz ---
+        # Limpiamos restos de sistemas de archivos previos en la raíz
         msg_info "Limpiando firmas previas en la partición raíz..."
         wipefs -a "$root_part" 2>/dev/null || true
 
@@ -187,7 +187,7 @@ setup_disks_and_mounts() {
 
     # Montaje de /home (si está seleccionado de forma independiente sin ZFS)
     if [ "$use_separate_home" = true ]; then
-        # --- AQUÍ: Limpiamos restos de sistemas de archivos previos en /home ---
+        # Limpiamos restos de sistemas de archivos previos en /home
         msg_info "Limpiando firmas previas en la partición /home..."
         wipefs -a "$home_part" 2>/dev/null || true
 
@@ -201,6 +201,29 @@ setup_disks_and_mounts() {
         mkdir -p /mnt/home
         mount "$home_part" /mnt/home
     fi
+
+    # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+    mkdir -p /tmp/pandamonium_state
+    echo "$target_disk" > /tmp/pandamonium_state/target_disk
+    echo "$root_part" > /tmp/pandamonium_state/root_part
+    echo "$is_uefi" > /tmp/pandamonium_state/is_uefi
+
+    if [ "$use_zfs" = true ]; then
+        echo "zfs" > /tmp/pandamonium_state/fs_root
+        echo "zroot (Datasets)" > /tmp/pandamonium_state/home_info
+    else
+        echo "$fs_root" > /tmp/pandamonium_state/fs_root
+        if [ "$use_separate_home" = true ]; then
+            echo "$home_part ($fs_home)" > /tmp/pandamonium_state/home_info
+        else
+            echo "Integrado en Raíz" > /tmp/pandamonium_state/home_info
+        fi
+    fi
+
+    if [ "$is_uefi" = true ]; then
+        echo "$boot_part" > /tmp/pandamonium_state/boot_part
+    fi
+    # -----------------------------------------------
 
     msg_success "¡Particionado, almacenamiento y montajes completados con éxito!"
     sleep 2
