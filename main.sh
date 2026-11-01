@@ -12,6 +12,7 @@ source modules/03_bootstrap.sh
 source modules/04_chroot.sh
 source modules/05_gui.sh
 source modules/06_extras.sh
+source modules/07_laststep.sh # <-- ¡Añadido el source del módulo final!
 
 main_menu() {
     while true; do
@@ -42,6 +43,9 @@ main_menu() {
             *"[06] EXTRAS"*)
                 extras_sel
                 ;;
+            *"[07] RESUMEN Y FINALIZACIÓN"*) # <-- Opción individual en el dashboard
+                run_last_step
+                ;;
             *"EJECUTAR INSTALACIÓN COMPLETA"*)
                 msg_info "Lanzando secuencia completa de instalación..."
                 check_and_configure_network
@@ -50,8 +54,7 @@ main_menu() {
                 run_chroot_config
                 gui_sel
                 extras_sel
-                msg_success "¡Instalación finalizada con éxito!"
-                sleep 3
+                run_last_step # <-- Reemplazamos el mensaje estático por el flujo final interactivo
                 ;;
             *"SALIR"*)
                 msg_info "Saliendo de Pandamonium..."
