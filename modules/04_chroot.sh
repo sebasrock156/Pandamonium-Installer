@@ -102,6 +102,14 @@ EOF
     echo "root:$root_pass" | $chroot_cmd /mnt chpasswd
     msg_success "Contraseña de root configurada exitosamente."
 
+    # --- VOLCADO DE ESTADO: Root Pass ---
+    mkdir -p /tmp/pandamonium_state
+    if [ -n "$root_pass" ]; then
+        echo "Asignada" > /tmp/pandamonium_state/root_password_status
+    else
+        echo "No asignada" > /tmp/pandamonium_state/root_password_status
+    fi
+
     # Creación de usuario personalizado con contraseña enmascarada (Gum)
     show_header
     msg_info "Creación de usuario del sistema"
@@ -109,6 +117,7 @@ EOF
     local username
     username=$(gum input --placeholder "Introduce tu nombre de usuario (ej. tunombre):")
 
+    local user_pass_status="No asignada"
     if [ -n "$username" ]; then
         $chroot_cmd /mnt useradd -m -G wheel,audio,video -s /bin/bash "$username"
         
@@ -131,7 +140,17 @@ EOF
         echo "$username:$user_pass" | $chroot_cmd /mnt chpasswd
         $chroot_cmd /mnt sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
         msg_success "Usuario $username creado y configurado con privilegios de sudo."
+
+        if [ -n "$user_pass" ]; then
+            user_pass_status="Asignada"
+        fi
+        echo "$username" > /tmp/pandamonium_state/username
+    else
+        echo "Ninguno" > /tmp/pandamonium_state/username
     fi
+
+    # --- VOLCADO DE ESTADO: User Pass ---
+    echo "$user_pass_status" > /tmp/pandamonium_state/user_password_status
 
     # --- CONFIGURACIÓN ESPECÍFICA DE ZFS (Mkinitcpio hooks) ---
     if [ "$use_zfs" = true ]; then
@@ -278,6 +297,9 @@ EOF
             fi
             ;;
     esac
+
+    # --- VOLCADO DE ESTADO: Bootloader ---
+    echo "$bootloader_choice" > /tmp/pandamonium_state/bootloader_choice
 
     # --- 6. CONFIGURACIÓN DE ZRAM UNIVERSAL (ZFS-aware) ---
     show_header
