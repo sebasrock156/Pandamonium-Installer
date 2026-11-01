@@ -32,10 +32,14 @@ gui_sel() {
     local choice_type
     choice_type=$(gum choose "Entorno de Escritorio (DE)" "Gestor de Ventanas (WM)" "Ninguno (Solo CLI / Servidor)")
 
+    local gui_summary="Ninguno (Solo CLI / Servidor)"
+    mkdir -p /tmp/pandamonium_state
+
     case "$choice_type" in
         "Entorno de Escritorio (DE)")
             local de_choice
             de_choice=$(gum choose "KDE Plasma" "Gnome" "Cinnamon" "XFCE" "Budgie" "Mate")
+            gui_summary="Entorno de Escritorio (DE): $de_choice"
 
             case "$de_choice" in
                 "KDE Plasma")
@@ -98,6 +102,7 @@ gui_sel() {
         "Gestor de Ventanas (WM)")
             local wm_choice
             wm_choice=$(gum choose "i3" "Hyprland" "Fluxbox / Openbox")
+            gui_summary="Gestor de Ventanas (WM): $wm_choice"
 
             case "$wm_choice" in
                 "i3")
@@ -132,8 +137,13 @@ gui_sel() {
 
         "Ninguno (Solo CLI / Servidor)")
             msg_info "Saltando la instalación gráfica. El sistema arrancará en consola."
+            gui_summary="Ninguno (Solo CLI / Servidor)"
             ;;
     esac
+
+    # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+    echo "$gui_summary" > /tmp/pandamonium_state/gui_choice
+    # -----------------------------------------------
 
     # 2. Habilitación de servicios según el Init registrado
     if [ "$init_system" = "openrc" ]; then
