@@ -27,7 +27,7 @@ run_bootstrap_systemd() {
         "linux-rt (Tiempo real)")
             kernel_pkg="linux-rt"
             ;;
-        "linux-hardened (Seguridad robusta)"
+        "linux-hardened (Seguridad robusta)")
             kernel_pkg="linux-hardened"
             ;;
         "linux-zen (Para gaming)")
@@ -122,6 +122,14 @@ EOF
         fi
 
         echo "systemd" > /tmp/pandamonium_init
+
+        # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+        mkdir -p /tmp/pandamonium_state
+        echo "Arch Linux (Systemd)" > /tmp/pandamonium_state/distro
+        echo "$kernel_choice" > /tmp/pandamonium_state/kernel_choice
+        echo "$ucode_pkg" > /tmp/pandamonium_state/ucode_pkg
+        # -----------------------------------------------
+
         msg_success "¡Bootstrap (Systemd) y almacenamiento configurados correctamente!"
     else
         msg_error "Error al ejecutar pacstrap."
