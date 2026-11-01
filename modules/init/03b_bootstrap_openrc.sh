@@ -140,6 +140,13 @@ EOF
         fi
 
         echo "openrc" > /tmp/pandamonium_init
+
+        # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+        mkdir -p /tmp/pandamonium_state
+        echo "Artix Linux (OpenRC)" > /tmp/pandamonium_state/distro
+        echo "$kernel_choice" > /tmp/pandamonium_state/kernel_choice
+        echo "${ucode_pkg:-Ninguno}" > /tmp/pandamonium_state/ucode_pkg
+        # -----------------------------------------------
         
         msg_success "¡Bootstrap de OpenRC y almacenamiento configurados con éxito!"
     else
