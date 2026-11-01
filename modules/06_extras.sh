@@ -41,7 +41,7 @@ extras_sel() {
         show_header
         msg_info "Categorías de Aplicaciones y Utilidades Extra"
 
-        local current_pkgs=("${!SELECTED_EXTRA_PKGS_MAP[@]}")
+        local current_pkgs=("{${!SELECTED_EXTRA_PKGS_MAP[@]}}")
 
         if [ ${#current_pkgs[@]} -gt 0 ]; then
             msg_success "Paquetes marcados (${#current_pkgs[@]}): ${current_pkgs[*]}"
@@ -194,7 +194,7 @@ extras_sel() {
                         msg_info "Sugerencia: Activar Chaotic-AUR permite instalar paquetes de AUR con pacman directo."
                         if gum confirm "¿Deseas activar Chaotic-AUR antes de instalar?"; then
                             SELECTED_EXTRA_PKGS_MAP["chaotic-mirrors"]=1
-                            pkgs_to_install=("${!SELECTED_EXTRA_PKGS_MAP[@]}")
+                            pkgs_to_install=("{${!SELECTED_EXTRA_PKGS_MAP[@]}}")
                             has_chaotic=true
                         fi
                     fi
@@ -237,6 +237,12 @@ extras_sel() {
 
                         if $run_cmd pacman -S --noconfirm --needed "${final_pkgs[@]}"; then
                             msg_success "¡Paquetes instalados con éxito!"
+                            
+                            # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+                            mkdir -p /tmp
+                            printf "%s\n" "${final_pkgs[@]}" > /tmp/pandamonium_extra_pkgs
+                            # -----------------------------------------------
+
                             SELECTED_EXTRA_PKGS_MAP=()
                             sleep 3
                             return
