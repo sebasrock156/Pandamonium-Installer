@@ -15,6 +15,9 @@ run_security_config() {
         "AppArmor (Recomendado - Flexible y nativo en Arch)" \
         "SELinux (Avanzado - Requiere configuración manual post-install)")
 
+    # Creamos el directorio de estado por si acaso
+    mkdir -p /tmp/pandamonium_state
+
     case "$security_choice" in
         "AppArmor (Recomendado - Flexible y nativo en Arch)")
             msg_info "Configurando AppArmor..."
@@ -22,6 +25,10 @@ run_security_config() {
             # Guardamos el estado para el Bootloader
             echo "apparmor" > /tmp/pandamonium_security
             echo "lsm=landlock,lockdown,yama,apparmor,bpf" > /tmp/pandamonium_lsm_param
+
+            # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+            echo "AppArmor" > /tmp/pandamonium_state/security_choice
+            # -----------------------------------------------
 
             # Instalamos paquetes requeridos dentro del target /mnt
             msg_info "Instalando apparmor y perfiles base..."
@@ -51,6 +58,10 @@ run_security_config() {
             echo "selinux" > /tmp/pandamonium_security
             echo "lsm=landlock,lockdown,yama,selinux,bpf" > /tmp/pandamonium_lsm_param
 
+            # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+            echo "SELinux" > /tmp/pandamonium_state/security_choice
+            # -----------------------------------------------
+
             msg_success "Parámetros de kernel para SELinux definidos."
             ;;
 
@@ -60,6 +71,10 @@ run_security_config() {
             
             # Si el usuario no quiere nada, nos aseguramos de purgar AppArmor
             arch-chroot /mnt pacman -Rns --noconfirm apparmor 2>/dev/null || true
+
+            # --- VOLCADO DE ESTADO PARA EL RESUMEN FINAL ---
+            echo "Ninguna (Sistema Vanilla)" > /tmp/pandamonium_state/security_choice
+            # -----------------------------------------------
             ;;
     esac
 
