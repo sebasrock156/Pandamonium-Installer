@@ -28,7 +28,7 @@ msg_error() {
 show_interactive_panel_dashboard() {
     show_header
 
-    local p1 p2 p3 p4 p5 p6 p_all b_exit
+    local p1 p2 p3 p4 p5 p6 p7 p_all b_exit b_exit_right
 
     p1=$(gum style --border "rounded" --border-foreground "39" --padding "0 2" --width 90 \
         " [01] CONFIGURACIÓN DE RED" \
@@ -54,17 +54,21 @@ show_interactive_panel_dashboard() {
         " [06] EXTRAS" \
         "      Navegadores, reproductores, compiladores de paquetes, etc.")
 
+    p7=$(gum style --border "rounded" --border-foreground "214" --padding "0 2" --width 90 \
+        " [07] RESUMEN Y FINALIZACIÓN" \
+        "      Cuadro de estado final, opciones de reinicio, menú o w3m a Ubuntu")
+
     p_all=$(gum style --border "double" --border-foreground "226" --padding "0 2" --width 90 \
-        " [07] EJECUTAR INSTALACIÓN COMPLETA" \
-        "      Lanza toda la instalación en automático")
+        " EJECUTAR INSTALACIÓN COMPLETA" \
+        "      Lanza toda la instalación en automático de principio a fin")
 
     # Botón de salida movido hacia la derecha
     b_exit=$(gum style --border "rounded" --border-foreground "196" --padding "0 2" --width 24 \
         "      SALIR")
     b_exit_right=$(echo "$b_exit" | sed 's/^/                                                             /')
 
-    # Indicador de foco invisible
-    gum choose --cursor "" "$p1" "$p2" "$p3" "$p4" "$p5" "$p6" "$p_all" "$b_exit_right"
+    # Indicador de foco invisible con las 8 opciones y la salida
+    gum choose --cursor "" "$p1" "$p2" "$p3" "$p4" "$p5" "$p6" "$p7" "$p_all" "$b_exit_right"
 }
 
 confirm_action() {
